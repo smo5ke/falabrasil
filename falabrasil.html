@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FalaBrasil | منصة احترافية لتعلم 10,000 كلمة برتغالية برازيلية</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇧🇷</text></svg>">
+    <meta name="description" content="FalaBrasil - منصة تفاعلية متكاملة لتعلم 10,000 كلمة في اللغة البرتغالية البرازيلية وفق منهجية CEFR والتكرار المتباعد.">
+    <meta property="og:title" content="FalaBrasil | 10,000 كلمة برتغالية برازيلية">
+    <meta property="og:description" content="منصة شاملة: بطاقات استذكار، اختبارات، تصريف الأفعال، العامية البرازيلية ومعلم ذكي AI.">
+    <meta property="og:type" content="website">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,7 +19,7 @@
     <!-- Google Fonts: Cairo & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Alpine.js for State Management -->
     <script src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js" defer></script>
@@ -59,7 +64,7 @@
         }
         .transform-style-3d {
             transform-style: preserve-3d;
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .backface-hidden {
             backface-visibility: hidden;
@@ -87,31 +92,171 @@
     </style>
 </head>
 
-<body x-data="portugueseApp()" x-init="initApp()" class="min-h-screen flex flex-col bg-slate-50 text-slate-800 antialiased">
+<body x-data="portugueseApp()" x-init="initApp()" class="min-h-screen flex flex-col bg-slate-50 text-slate-800 antialiased selection:bg-emerald-500 selection:text-white">
+
+    <!-- TOAST NOTIFICATION -->
+    <div x-show="toast.show" x-transition.opacity.duration.300ms style="display: none;"
+         class="fixed bottom-6 left-6 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl shadow-xl text-white font-bold text-sm"
+         :class="toast.type === 'success' ? 'bg-emerald-600' : (toast.type === 'warn' ? 'bg-amber-600' : 'bg-slate-900')">
+        <span x-html="toast.icon"></span>
+        <span x-text="toast.message"></span>
+    </div>
 
     <!-- SETUP / UPLOAD DICTIONARY MODAL -->
-    <div x-show="!dictionaryLoaded" style="display: none;" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center space-y-6">
-            <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-4 shadow-inner">
-                📊
+    <div x-show="!dictionaryLoaded" style="display: none;" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center space-y-6 border border-slate-100">
+            <!-- Auto Fetching Loading -->
+            <div x-show="isAutoLoading" class="space-y-5 py-4">
+                <div class="relative w-20 h-20 mx-auto flex items-center justify-center">
+                    <div class="w-20 h-20 rounded-full border-4 border-emerald-100 border-t-emerald-600 animate-spin absolute inset-0"></div>
+                    <span class="text-3xl">🇧🇷</span>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-black text-slate-900">جاري تحميل القاموس...</h2>
+                    <p class="text-slate-500 text-sm mt-1">يتم تجهيز 10,000 كلمة برتغالية برازيلية تلقائياً 🚀</p>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                    <div class="bg-emerald-500 h-2 rounded-full animate-pulse w-3/4 mx-auto"></div>
+                </div>
             </div>
-            <h2 class="text-2xl font-black text-slate-900">تحميل القاموس الشامل</h2>
-            <p class="text-slate-500 text-sm leading-relaxed">
-                التطبيق يحتاج إلى قاعدة بيانات الـ 10,000 كلمة للعمل بشكل كامل. الرجاء رفع ملف الإكسل <br> <b class="text-emerald-700">Brazilian_Portuguese_10000_Complete_Dictionary.xlsx</b>
-            </p>
-            
-            <div class="relative mt-4">
-                <input type="file" id="excelFile" accept=".xlsx, .xls" @change="handleFileUpload" class="hidden">
-                <label for="excelFile" class="cursor-pointer block w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl transition shadow-lg">
-                    <span x-show="!isParsing">اختيار ملف الإكسل (.xlsx)</span>
-                    <span x-show="isParsing">جاري قراءة 10,000 كلمة... ⏳</span>
-                </label>
+
+            <!-- Manual Upload Fallback -->
+            <div x-show="!isAutoLoading" class="space-y-5">
+                <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-4xl mx-auto shadow-inner">
+                    📊
+                </div>
+                <div>
+                    <h2 class="text-2xl font-black text-slate-900">تحميل القاموس الشامل</h2>
+                    <p class="text-slate-500 text-sm leading-relaxed mt-1">
+                        اختر ملف القاموس <b class="text-emerald-700">dictionary.json</b> أو ملف الإكسل <br> <b class="text-emerald-700">Brazilian_Portuguese_10000_Complete_Dictionary.xlsx</b>
+                    </p>
+                </div>
+                
+                <div class="relative">
+                    <input type="file" id="excelFile" accept=".xlsx, .xls, .json" @change="handleFileUpload" class="hidden">
+                    <label for="excelFile" class="cursor-pointer block w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl transition shadow-lg shadow-emerald-600/20">
+                        <span x-show="!isParsing">اختيار ملف القاموس (.json / .xlsx)</span>
+                        <span x-show="isParsing">جاري قراءة ومعالجة الكلمات... ⏳</span>
+                    </label>
+                </div>
+
+                <button @click="loadSampleDictionary()" class="text-xs text-slate-500 hover:text-emerald-700 font-semibold underline block mx-auto transition">
+                    المتابعة مع الكلمات الأساسية مؤقتاً (50 كلمة)
+                </button>
+                
+                <p class="text-xs text-slate-400 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <i class="fa-solid fa-cloud-arrow-down mb-1 text-emerald-600"></i><br>
+                    سيتم حفظ القاموس في متصفحك ليعمل التطبيق لاحقاً بسرعة البرق وبدون إنترنت (Offline Mode).
+                </p>
             </div>
-            
-            <p class="text-xs text-slate-400 mt-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <i class="fa-solid fa-cloud-arrow-down mb-1 text-emerald-600"></i><br>
-                سيتم حفظ القاموس في متصفحك ليعمل التطبيق لاحقاً بسرعة البرق وبدون إنترنت (Offline Mode).
+        </div>
+    </div>
+
+    <!-- PROFILE & DATA MODAL (نافذة الملف الشخصي والبيانات) -->
+    <div x-show="showProfileModal" style="display: none;" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto" @click.outside="showProfileModal = false">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-500 flex items-center justify-center text-white text-2xl shadow-md" x-text="userRank.badge"></div>
+                    <div>
+                        <h3 class="font-black text-slate-900 text-lg" x-text="userRank.title"></h3>
+                        <p class="text-xs text-slate-400">المستوى <span x-text="userRank.level"></span> • <span x-text="xp"></span> XP</p>
+                    </div>
+                </div>
+                <button @click="showProfileModal = false" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Rank Progress Bar -->
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
+                <div class="flex justify-between text-xs font-bold text-slate-600">
+                    <span>التقدم نحو المستوى التالي</span>
+                    <span class="text-emerald-600 font-inter" x-text="rankProgressPercent + '%'"></span>
+                </div>
+                <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                    <div class="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-500" :style="`width: ${rankProgressPercent}%`"></div>
+                </div>
+                <p class="text-[11px] text-slate-400 text-left font-inter">
+                    <span x-text="xp"></span> / <span x-text="userRank.nextXp"></span> XP
+                </p>
+            </div>
+
+            <!-- Metrics Grid -->
+            <div class="grid grid-cols-2 gap-3 text-center">
+                <div class="bg-emerald-50/70 border border-emerald-100 rounded-2xl p-3.5">
+                    <span class="text-xs text-emerald-800 font-semibold block mb-1">الكلمات المتقنة</span>
+                    <span class="text-2xl font-black text-emerald-700 font-inter" x-text="learnedWords.length"></span>
+                    <span class="text-[11px] text-emerald-600/70 block mt-0.5" x-text="'من 10,000 (' + (Math.round((learnedWords.length / 10000) * 1000) / 10) + '%)'"></span>
+                </div>
+                <div class="bg-amber-50/70 border border-amber-100 rounded-2xl p-3.5">
+                    <span class="text-xs text-amber-800 font-semibold block mb-1">أيام التتابع</span>
+                    <span class="text-2xl font-black text-amber-600 font-inter" x-text="streak"></span>
+                    <span class="text-[11px] text-amber-600/70 block mt-0.5">أيام متتالية 🔥</span>
+                </div>
+                <div class="bg-purple-50/70 border border-purple-100 rounded-2xl p-3.5">
+                    <span class="text-xs text-purple-800 font-semibold block mb-1">الكلمات المفضلة</span>
+                    <span class="text-2xl font-black text-purple-700 font-inter" x-text="favoriteWords.length"></span>
+                    <span class="text-[11px] text-purple-600/70 block mt-0.5">كلمات مُميزة ⭐</span>
+                </div>
+                <div class="bg-red-50/70 border border-red-100 rounded-2xl p-3.5">
+                    <span class="text-xs text-red-800 font-semibold block mb-1">كلمات للمراجعة</span>
+                    <span class="text-2xl font-black text-red-600 font-inter" x-text="difficultWords.length"></span>
+                    <span class="text-[11px] text-red-600/70 block mt-0.5">صعبة الحفظ ⚠️</span>
+                </div>
+            </div>
+
+            <!-- Data Export & Reset -->
+            <div class="space-y-2 border-t border-slate-100 pt-4">
+                <h4 class="text-xs font-bold text-slate-700">إدارة البيانات والنسخ الاحتياطي:</h4>
+                <div class="flex gap-2">
+                    <button @click="exportProgress()" class="flex-1 py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-download"></i>
+                        <span>تصدير نسخة تقدمي (.json)</span>
+                    </button>
+                    <label class="flex-1 py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-upload"></i>
+                        <span>استيراد نسخة سابقة</span>
+                        <input type="file" accept=".json" @change="importProgress" class="hidden">
+                    </label>
+                </div>
+                <button @click="resetProgressConfirm()" class="w-full py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-xs transition border border-red-200">
+                    <i class="fa-solid fa-trash-can ml-1"></i> إعادة ضبط التقدم بالكامل
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- API KEY MODAL (GEMINI AI) -->
+    <div x-show="showApiKeyModal" style="display: none;" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-slate-100" @click.outside="showApiKeyModal = false">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-key text-amber-500 text-xl"></i>
+                    <h3 class="font-bold text-slate-900 text-lg">مفتاح Google Gemini API</h3>
+                </div>
+                <button @click="showApiKeyModal = false" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-500 leading-relaxed">
+                المعلم الذكي يستخدم ذكاء Google Gemini لمساعدتك. يتم حفظ المفتاح في متصفحك الشخصي فقط ولا يُشارك مع أي جهة.
             </p>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">أدخل المفتاح الخاص بك (API Key):</label>
+                <input type="password" x-model="apiKeyInput" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 font-mono">
+                <p class="text-[11px] text-slate-400 mt-1.5">
+                    يمكنك الحصول على مفتاح مجاني تماماً من <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-emerald-600 underline font-semibold">Google AI Studio</a>.
+                </p>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button @click="saveApiKey()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md">
+                    حفظ المفتاح
+                </button>
+                <button @click="showApiKeyModal = false" class="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl text-sm transition">
+                    إلغاء
+                </button>
+            </div>
         </div>
     </div>
 
@@ -134,33 +279,34 @@
                     </div>
                 </div>
 
-                <!-- Stats Bar (Gamification) -->
-                <div class="hidden md:flex items-center gap-6 bg-slate-50 px-4 py-1.5 rounded-2xl border border-slate-200 text-sm">
-                    <div class="flex items-center gap-2" title="الكلمات التي تمت مراجعتها">
-                        <i class="fa-solid fa-brain text-purple-600"></i>
-                        <span class="font-bold text-slate-700" x-text="learnedWords.length"></span>
-                        <span class="text-xs text-slate-400">/ 10,000</span>
+                <!-- Stats Bar (Gamification & Interactive Profile Trigger) -->
+                <div @click="showProfileModal = true" class="cursor-pointer hover:bg-slate-100 transition hidden md:flex items-center gap-5 bg-slate-50 px-4 py-1.5 rounded-2xl border border-slate-200 text-sm shadow-sm" title="اضغط لعرض إحصائياتك والملف الشخصي">
+                    <div class="flex items-center gap-2" title="الكلمات المتقنة">
+                        <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                        <span class="font-bold text-slate-800 font-inter" x-text="learnedWords.length"></span>
+                        <span class="text-xs text-slate-400">/ 10k</span>
                     </div>
                     <div class="w-px h-4 bg-slate-300"></div>
-                    <div class="flex items-center gap-2" title="نقاط الخبرة XP">
-                        <i class="fa-solid fa-bolt text-amber-500"></i>
-                        <span class="font-bold text-slate-700" x-text="xp"></span>
+                    <div class="flex items-center gap-1.5" title="نقاط الخبرة والرتبة">
+                        <span x-text="userRank.badge"></span>
+                        <span class="font-bold text-slate-800 font-inter" x-text="xp"></span>
                         <span class="text-xs text-slate-400">XP</span>
                     </div>
                     <div class="w-px h-4 bg-slate-300"></div>
-                    <div class="flex items-center gap-2" title="أيام التتابع">
+                    <div class="flex items-center gap-1.5" title="أيام التتابع">
                         <i class="fa-solid fa-fire text-orange-500"></i>
-                        <span class="font-bold text-slate-700" x-text="streak"></span>
+                        <span class="font-bold text-slate-800 font-inter" x-text="streak"></span>
                         <span class="text-xs text-slate-400">أيام</span>
                     </div>
+                    <i class="fa-solid fa-sliders text-slate-400 text-xs mr-1"></i>
                 </div>
 
                 <!-- Navigation Tabs (Desktop) -->
                 <nav class="hidden lg:flex items-center gap-1">
                     <template x-for="tab in tabs" :key="tab.id">
                         <button @click="activeTab = tab.id"
-                                :class="activeTab === tab.id ? 'bg-emerald-50 text-emerald-700 border-emerald-500 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'"
-                                class="px-3.5 py-2 rounded-xl text-sm transition-all flex items-center gap-2 border border-transparent">
+                                :class="activeTab === tab.id ? 'bg-emerald-50 text-emerald-700 border-emerald-500 font-bold shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'"
+                                class="px-3 py-2 rounded-xl text-xs xl:text-sm transition-all flex items-center gap-1.5 border border-transparent">
                             <i :class="tab.icon"></i>
                             <span x-text="tab.name"></span>
                         </button>
@@ -176,10 +322,20 @@
 
         <!-- Mobile Navigation Menu -->
         <div x-show="mobileMenuOpen" x-transition class="lg:hidden bg-white border-b border-slate-200 px-4 pt-2 pb-4 space-y-1">
+            <div class="flex justify-between items-center bg-slate-50 p-3 rounded-2xl mb-3" @click="showProfileModal = true">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl" x-text="userRank.badge"></span>
+                    <div>
+                        <div class="font-bold text-xs text-slate-800" x-text="userRank.title"></div>
+                        <div class="text-[11px] text-slate-400 font-inter"><span x-text="xp"></span> XP • <span x-text="learnedWords.length"></span> كلمة متقنة</div>
+                    </div>
+                </div>
+                <span class="text-xs text-emerald-700 font-bold bg-emerald-100 px-2 py-1 rounded-lg">إدارة البيانات</span>
+            </div>
             <template x-for="tab in tabs" :key="tab.id">
                 <button @click="activeTab = tab.id; mobileMenuOpen = false"
                         :class="activeTab === tab.id ? 'bg-emerald-50 text-emerald-700 font-bold' : 'text-slate-600 hover:bg-slate-50'"
-                        class="w-full text-right px-4 py-3 rounded-xl text-sm flex items-center gap-3">
+                        class="w-full text-right px-4 py-2.5 rounded-xl text-sm flex items-center gap-3">
                     <i :class="tab.icon" class="w-5"></i>
                     <span x-text="tab.name"></span>
                 </button>
@@ -196,7 +352,7 @@
             <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-900 text-white p-6 sm:p-8 shadow-xl">
                 <div class="relative z-10 max-w-2xl">
                     <span class="inline-block bg-white/20 backdrop-blur-md text-emerald-100 text-xs px-3 py-1 rounded-full font-semibold mb-3">
-                        🇧🇷 المنهجية المعتمدة لـ 10,000 كلمة
+                        🇧🇷 المنهجية المعتمدة لـ 10,000 كلمة برتغالية
                     </span>
                     <h1 class="text-2xl sm:text-4xl font-black leading-tight mb-3">
                         أتقن البرتغالية البرازيلية خطوة بخطوة من A1 إلى C2
@@ -211,7 +367,7 @@
                         </button>
                         <button @click="activeTab = 'dictionary'" class="bg-white/10 hover:bg-white/20 text-white font-semibold px-5 py-3 rounded-2xl backdrop-blur-md transition flex items-center gap-2">
                             <i class="fa-solid fa-book-open"></i>
-                            <span>استعراض القاموس الشامل</span>
+                            <span>استعراض القاموس الشامل (10,000 كلمة)</span>
                         </button>
                     </div>
                 </div>
@@ -243,28 +399,30 @@
                                     <span class="font-bold text-emerald-600" x-text="stage.coverage"></span>
                                 </div>
                                 <div class="flex justify-between text-slate-600">
-                                    <span>عدد المفردات:</span>
-                                    <span class="font-bold text-slate-800" x-text="stage.count + ' كلمة'"></span>
+                                    <span>الكلمات المتقنة في المرحلة:</span>
+                                    <span class="font-bold text-slate-800 font-inter">
+                                        <span x-text="getStageLearnedCount(stage.code)"></span> / <span x-text="getStageTotalCount(stage.code)"></span>
+                                    </span>
                                 </div>
                             </div>
                         </div>
 
                         <div>
-                            <!-- Progress Bar -->
+                            <!-- Real Dynamic Progress Bar -->
                             <div class="mb-4">
                                 <div class="flex justify-between text-xs text-slate-500 mb-1">
-                                    <span>مستوى الإنجاز</span>
-                                    <span x-text="getStageProgress(stage.level) + '%'"></span>
+                                    <span>مستوى الإنجاز الحقيقي</span>
+                                    <span class="font-bold text-emerald-700 font-inter" x-text="getStageProgress(stage.code) + '%'"></span>
                                 </div>
-                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                                    <div class="bg-emerald-500 h-full transition-all duration-500"
-                                         :style="`width: ${getStageProgress(stage.level)}%`"></div>
+                                <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                    <div class="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                                         :style="`width: ${getStageProgress(stage.code)}%`"></div>
                                 </div>
                             </div>
 
                             <button @click="startStage(stage.level)"
                                     class="w-full py-3 bg-slate-900 hover:bg-emerald-600 text-white font-bold rounded-2xl transition flex items-center justify-center gap-2 text-sm shadow-sm">
-                                <span>تعلم هذه المرحلة</span>
+                                <span>تعلم بطاقات هذه المرحلة</span>
                                 <i class="fa-solid fa-arrow-left text-xs"></i>
                             </button>
                         </div>
@@ -273,38 +431,95 @@
             </div>
         </section>
 
-        <!-- TAB 2: FLASHCARDS (البطاقات التعليمية) -->
+        <!-- TAB 2: FLASHCARDS (البطاقات التعليمية التفاعلية) -->
         <section x-show="activeTab === 'flashcards'" class="max-w-2xl mx-auto space-y-6">
-            <!-- Flashcard Header Controls -->
-            <div class="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200">
-                <div>
-                    <span class="text-xs text-slate-400 font-semibold">المرحلة الحالية</span>
-                    <h3 class="font-bold text-slate-800 text-sm" x-text="'مستوى ' + currentStageCode"></h3>
+            <!-- Flashcard Header Controls & Filters -->
+            <div class="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <span class="text-xs text-slate-400 font-semibold">المرحلة الحالية:</span>
+                        <div class="flex items-center gap-2 mt-0.5">
+                            <h3 class="font-bold text-slate-900 text-base" x-text="'مستوى ' + currentStageCode"></h3>
+                            <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full font-bold font-inter" x-text="currentDeck.length + ' كلمة متاحة'"></span>
+                        </div>
+                    </div>
+
+                    <!-- Level Selector -->
+                    <div class="flex items-center gap-1.5 overflow-x-auto">
+                        <template x-for="stg in ['A1', 'A2', 'B1', 'B2', 'C1/C2', 'ALL']" :key="stg">
+                            <button @click="currentStageCode = stg; currentCardIndex = 0; isFlipped = false"
+                                    :class="currentStageCode === stg ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'"
+                                    class="px-2.5 py-1 rounded-xl text-xs transition font-inter" x-text="stg"></button>
+                        </template>
+                    </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <button @click="prevCard()" class="w-10 h-10 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 flex items-center justify-center">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
-                    <span class="text-xs font-bold text-slate-600 font-inter" x-text="(currentCardIndex + 1) + ' / ' + currentDeck.length"></span>
-                    <button @click="nextCard()" class="w-10 h-10 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 flex items-center justify-center">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
+
+                <!-- Deck Filter & Navigation -->
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
+                    <div class="flex gap-1.5">
+                        <button @click="deckFilter = 'all'; currentCardIndex = 0; isFlipped = false"
+                                :class="deckFilter === 'all' ? 'bg-emerald-100 text-emerald-800 font-bold' : 'text-slate-500 hover:bg-slate-100'"
+                                class="px-2.5 py-1 rounded-lg transition">الكل</button>
+                        <button @click="deckFilter = 'unlearned'; currentCardIndex = 0; isFlipped = false"
+                                :class="deckFilter === 'unlearned' ? 'bg-emerald-100 text-emerald-800 font-bold' : 'text-slate-500 hover:bg-slate-100'"
+                                class="px-2.5 py-1 rounded-lg transition">غير المحفوظة</button>
+                        <button @click="deckFilter = 'difficult'; currentCardIndex = 0; isFlipped = false"
+                                :class="deckFilter === 'difficult' ? 'bg-red-100 text-red-800 font-bold' : 'text-slate-500 hover:bg-slate-100'"
+                                class="px-2.5 py-1 rounded-lg transition">الصعبة ⚠️</button>
+                        <button @click="deckFilter = 'favorites'; currentCardIndex = 0; isFlipped = false"
+                                :class="deckFilter === 'favorites' ? 'bg-purple-100 text-purple-800 font-bold' : 'text-slate-500 hover:bg-slate-100'"
+                                class="px-2.5 py-1 rounded-lg transition">المفضلة ⭐</button>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button @click="shuffleDeck()" class="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100" title="خلط البطاقات عشوائياً">
+                            <i class="fa-solid fa-shuffle"></i>
+                        </button>
+                        <button @click="prevCard()" class="w-8 h-8 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 flex items-center justify-center">
+                            <i class="fa-solid fa-chevron-right text-xs"></i>
+                        </button>
+                        <span class="font-bold text-slate-700 font-inter text-xs" x-text="currentDeck.length > 0 ? ((currentCardIndex + 1) + ' / ' + currentDeck.length) : '0 / 0'"></span>
+                        <button @click="nextCard()" class="w-8 h-8 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 flex items-center justify-center">
+                            <i class="fa-solid fa-chevron-left text-xs"></i>
+                        </button>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Empty Deck State -->
+            <div x-show="!currentCard" class="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-sm space-y-4">
+                <div class="text-5xl">🎉</div>
+                <h3 class="text-xl font-bold text-slate-800">لا توجد بطاقات في هذا التصنيف حالياً!</h3>
+                <p class="text-xs text-slate-500">تم إتقان الكلمات أو لم تقم بإضافة كلمات للمفضلة / الصعبة بعد.</p>
+                <button @click="deckFilter = 'all'" class="px-4 py-2 bg-emerald-600 text-white font-bold rounded-xl text-xs">
+                    عرض جميع الكلمات
+                </button>
             </div>
 
             <!-- 3D Interactive Flashcard -->
             <template x-if="currentCard">
-                <div class="perspective-1000 w-full min-h-[380px] cursor-pointer" @click="isFlipped = !isFlipped">
-                    <div class="relative w-full h-full min-h-[380px] transform-style-3d bg-white rounded-3xl border-2 border-slate-200 shadow-xl p-8 flex flex-col justify-between transition-all duration-500"
+                <div class="perspective-1000 w-full min-h-[390px] cursor-pointer select-none" @click="isFlipped = !isFlipped">
+                    <div class="relative w-full h-full min-h-[390px] transform-style-3d bg-white rounded-3xl border-2 border-slate-200 shadow-xl p-8 flex flex-col justify-between transition-all duration-500"
                          :class="isFlipped ? 'rotate-y-180 bg-slate-900 text-white border-emerald-500' : ''">
 
                         <!-- FRONT OF CARD -->
                         <div x-show="!isFlipped" class="flex flex-col justify-between h-full space-y-6">
                             <div class="flex justify-between items-start">
-                                <span class="bg-emerald-100 text-emerald-800 text-xs px-3 py-1 rounded-full font-bold" x-text="currentCard.level"></span>
-                                <button @click.stop="speak(currentCard.word)" class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center text-lg transition">
-                                    <i class="fa-solid fa-volume-high"></i>
-                                </button>
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-emerald-100 text-emerald-800 text-xs px-3 py-1 rounded-full font-bold" x-text="currentCard.level"></span>
+                                    <span x-show="learnedWords.includes(currentCard.id)" class="bg-emerald-50 text-emerald-600 border border-emerald-200 text-xs px-2.5 py-0.5 rounded-full font-bold">
+                                        ✓ مُتقنة
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button @click.stop="toggleFavorite(currentCard.id)" class="w-10 h-10 rounded-full flex items-center justify-center text-lg transition"
+                                            :class="favoriteWords.includes(currentCard.id) ? 'bg-amber-100 text-amber-500' : 'bg-slate-100 text-slate-400 hover:text-amber-500'">
+                                        <i class="fa-solid fa-star"></i>
+                                    </button>
+                                    <button @click.stop="speak(currentCard.word)" class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center text-lg transition" title="نطق الكلمة">
+                                        <i class="fa-solid fa-volume-high"></i>
+                                    </button>
+                                </div>
                             </div>
 
                             <div class="text-center my-auto space-y-3">
@@ -314,8 +529,8 @@
                                 </p>
                             </div>
 
-                            <div class="text-center text-xs text-slate-400 border-t border-slate-100 pt-3">
-                                <i class="fa-solid fa-rotate left-1"></i> انقر لرؤية الترجمة والمثال
+                            <div class="text-center text-xs text-slate-400 border-t border-slate-100 pt-3 flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-rotate left-1"></i> اضغط في أي مكان لقلب البطاقة ومعرفة الترجمة والمثال
                             </div>
                         </div>
 
@@ -323,9 +538,15 @@
                         <div x-show="isFlipped" class="rotate-y-180 flex flex-col justify-between h-full space-y-6 text-slate-100">
                             <div class="flex justify-between items-start">
                                 <span class="bg-slate-800 text-slate-300 text-xs px-3 py-1 rounded-full font-bold" x-text="currentCard.pos"></span>
-                                <button @click.stop="speak(currentCard.word)" class="w-10 h-10 rounded-full bg-slate-800 text-emerald-400 hover:bg-slate-700 flex items-center justify-center text-lg transition">
-                                    <i class="fa-solid fa-volume-high"></i>
-                                </button>
+                                <div class="flex items-center gap-2">
+                                    <button @click.stop="toggleFavorite(currentCard.id)" class="w-10 h-10 rounded-full flex items-center justify-center text-lg transition"
+                                            :class="favoriteWords.includes(currentCard.id) ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-800 text-slate-500 hover:text-amber-400'">
+                                        <i class="fa-solid fa-star"></i>
+                                    </button>
+                                    <button @click.stop="speak(currentCard.word)" class="w-10 h-10 rounded-full bg-slate-800 text-emerald-400 hover:bg-slate-700 flex items-center justify-center text-lg transition">
+                                        <i class="fa-solid fa-volume-high"></i>
+                                    </button>
+                                </div>
                             </div>
 
                             <div class="text-center my-auto space-y-4">
@@ -344,7 +565,7 @@
                             </div>
 
                             <div class="text-center text-xs text-slate-500 border-t border-slate-800 pt-3">
-                                انقر للعودة للوجه الأمامي
+                                اضغط للعودة إلى وجه الكلمة
                             </div>
                         </div>
 
@@ -353,45 +574,71 @@
             </template>
 
             <!-- Spaced Repetition Feedback Buttons -->
-            <div class="grid grid-cols-3 gap-3">
-                <button @click="markCard('hard')" class="py-3 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded-2xl text-xs sm:text-sm border border-red-200 transition">
-                    ❌ صعب (إعادة)
-                </button>
-                <button @click="markCard('good')" class="py-3 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold rounded-2xl text-xs sm:text-sm border border-amber-200 transition">
-                    🤔 متوسط
-                </button>
-                <button @click="markCard('easy')" class="py-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-2xl text-xs sm:text-sm border border-emerald-200 transition">
-                    ✅ متمكن (+10 XP)
-                </button>
-            </div>
+            <template x-if="currentCard">
+                <div class="grid grid-cols-3 gap-3">
+                    <button @click="markCard('hard')" class="py-3.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded-2xl text-xs sm:text-sm border border-red-200 transition active:scale-95 flex flex-col items-center gap-1 shadow-sm">
+                        <span>❌ صعبة الحفظ</span>
+                        <span class="text-[10px] text-red-500 font-normal">تضاف للمراجعة (+2 XP)</span>
+                    </button>
+                    <button @click="markCard('good')" class="py-3.5 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold rounded-2xl text-xs sm:text-sm border border-amber-200 transition active:scale-95 flex flex-col items-center gap-1 shadow-sm">
+                        <span>🤔 متوسطة</span>
+                        <span class="text-[10px] text-amber-600 font-normal">متابعة عادية (+5 XP)</span>
+                    </button>
+                    <button @click="markCard('easy')" class="py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-xs sm:text-sm border border-emerald-600 transition active:scale-95 flex flex-col items-center gap-1 shadow-md shadow-emerald-600/20">
+                        <span>✅ أتقنتها تماماً</span>
+                        <span class="text-[10px] text-emerald-100 font-normal">تسجيل الإتقان (+15 XP)</span>
+                    </button>
+                </div>
+            </template>
         </section>
 
-        <!-- TAB 3: QUIZ ARENA (ساحة التحديات والاختبارات) -->
+        <!-- TAB 3: QUIZ ARENA (ساحة التحديات والاختبارات التفاعلية) -->
         <section x-show="activeTab === 'quiz'" class="max-w-2xl mx-auto space-y-6">
             <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
-                <!-- Quiz Header -->
-                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                <!-- Quiz Setup / Active Header -->
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
                     <div>
-                        <span class="text-xs text-emerald-600 font-bold">اختبار تقييم المفردات</span>
-                        <h2 class="text-xl font-bold text-slate-900">سؤال <span x-text="quizQuestionIndex + 1"></span> من 10</h2>
+                        <span class="text-xs text-emerald-600 font-bold">اختبار تقييم المفردات والسرعة</span>
+                        <h2 class="text-xl font-bold text-slate-900" x-show="!quizCompleted">
+                            سؤال <span class="font-inter font-bold" x-text="quizQuestionIndex + 1"></span> من 10
+                        </h2>
+                        <h2 class="text-xl font-bold text-slate-900" x-show="quizCompleted">
+                            نتيجة الاختبار 🏆
+                        </h2>
                     </div>
-                    <div class="bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-xl text-sm">
-                        النقاط: <span x-text="quizScore"></span> XP
+
+                    <div class="flex items-center gap-2">
+                        <select x-model="quizLevel" @change="resetQuiz()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700">
+                            <option value="ALL">جميع المستويات</option>
+                            <option value="A1">مستوى A1</option>
+                            <option value="A2">مستوى A2</option>
+                            <option value="B1">مستوى B1</option>
+                            <option value="B2">مستوى B2</option>
+                            <option value="C1/C2">مستوى C1/C2</option>
+                        </select>
+                        <div class="bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-xl text-sm font-inter">
+                            +<span x-text="quizScore"></span> XP
+                        </div>
                     </div>
                 </div>
 
-                <!-- Question Box -->
-                <template x-if="currentQuizQuestion">
+                <!-- ACTIVE QUESTION -->
+                <template x-if="!quizCompleted && currentQuizQuestion">
                     <div class="space-y-6">
+                        <!-- Progress indicator -->
+                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                            <div class="bg-emerald-500 h-full rounded-full transition-all duration-300" :style="`width: ${((quizQuestionIndex) / 10) * 100}%`"></div>
+                        </div>
+
                         <div class="bg-slate-50 rounded-2xl p-6 text-center space-y-2 border border-slate-100">
-                            <span class="text-xs text-slate-400 font-medium">ما هو معنى الكلمة البرتغالية التالية؟</span>
+                            <span class="text-xs text-slate-400 font-medium">ما هو المعنى الصحيح للكلمة البرتغالية؟</span>
                             <div class="flex items-center justify-center gap-3">
                                 <h3 class="text-3xl font-extrabold text-slate-900 font-inter" x-text="currentQuizQuestion.word"></h3>
-                                <button @click="speak(currentQuizQuestion.word)" class="text-emerald-600 hover:text-emerald-700">
-                                    <i class="fa-solid fa-volume-high text-xl"></i>
+                                <button @click="speak(currentQuizQuestion.word)" class="text-emerald-600 hover:text-emerald-700 text-xl transition" title="استمع للكلمة">
+                                    <i class="fa-solid fa-volume-high"></i>
                                 </button>
                             </div>
-                            <p class="text-xs text-slate-400">[ <span x-text="currentQuizQuestion.phonetic"></span> ]</p>
+                            <p class="text-xs text-slate-400">[ <span x-text="currentQuizQuestion.phonetic" class="text-emerald-700 font-semibold"></span> ]</p>
                         </div>
 
                         <!-- Options Grid -->
@@ -401,28 +648,67 @@
                                         :disabled="quizAnswered"
                                         :class="{
                                             'bg-slate-50 border-slate-200 text-slate-800 hover:bg-emerald-50 hover:border-emerald-300': !quizAnswered,
-                                            'bg-emerald-500 text-white border-emerald-500': quizAnswered && option === currentQuizQuestion.correct,
+                                            'bg-emerald-500 text-white border-emerald-500 shadow-md': quizAnswered && option === currentQuizQuestion.correct,
                                             'bg-red-500 text-white border-red-500': quizAnswered && selectedOption === option && option !== currentQuizQuestion.correct
                                         }"
-                                        class="p-4 rounded-2xl border text-right font-bold transition text-sm flex items-center justify-between">
+                                        class="p-4 rounded-2xl border text-right font-bold transition text-sm flex items-center justify-between active:scale-98">
                                     <span x-text="option"></span>
-                                    <i x-show="quizAnswered && option === currentQuizQuestion.correct" class="fa-solid fa-circle-check"></i>
+                                    <i x-show="quizAnswered && option === currentQuizQuestion.correct" class="fa-solid fa-circle-check text-lg"></i>
+                                    <i x-show="quizAnswered && selectedOption === option && option !== currentQuizQuestion.correct" class="fa-solid fa-circle-xmark text-lg"></i>
                                 </button>
                             </template>
                         </div>
 
                         <!-- Next Question Button -->
                         <div x-show="quizAnswered" class="pt-4 flex justify-end">
-                            <button @click="nextQuizQuestion()" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-sm transition">
-                                السؤال التالي <i class="fa-solid fa-arrow-left mr-2"></i>
+                            <button @click="nextQuizQuestion()" class="px-7 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-sm transition shadow-md shadow-emerald-600/20 flex items-center gap-2">
+                                <span x-text="quizQuestionIndex >= 9 ? 'عرض النتيجة النهائية' : 'السؤال التالي'"></span>
+                                <i class="fa-solid fa-arrow-left text-xs"></i>
                             </button>
                         </div>
                     </div>
                 </template>
+
+                <!-- QUIZ COMPLETED SCREEN (شاشة إنهاء الاختبار) -->
+                <div x-show="quizCompleted" class="text-center py-6 space-y-6">
+                    <div class="w-20 h-20 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center text-4xl mx-auto shadow-inner">
+                        🏆
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-black text-slate-900">أحسنت! أكملت الاختبار بنجاح</h3>
+                        <p class="text-xs text-slate-500 mt-1">تم حفظ تقدمك تلقائياً في النظام وإضافة النقاط</p>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3 max-w-sm mx-auto">
+                        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                            <span class="text-xs text-slate-400 block mb-1">الإجابات الصحيحة</span>
+                            <span class="text-xl font-black text-slate-800 font-inter" x-text="quizCorrectCount + ' / 10'"></span>
+                        </div>
+                        <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-100">
+                            <span class="text-xs text-emerald-700 block mb-1">نسبة الدقة</span>
+                            <span class="text-xl font-black text-emerald-700 font-inter" x-text="(quizCorrectCount * 10) + '%'"></span>
+                        </div>
+                        <div class="bg-amber-50 p-3 rounded-2xl border border-amber-100">
+                            <span class="text-xs text-amber-700 block mb-1">النقاط المكتسبة</span>
+                            <span class="text-xl font-black text-amber-700 font-inter" x-text="'+' + quizScore"></span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-3 justify-center pt-2">
+                        <button @click="resetQuiz()" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-sm transition shadow-md shadow-emerald-600/20 flex items-center gap-2">
+                            <i class="fa-solid fa-rotate-right"></i>
+                            <span>بدء اختبار جديد</span>
+                        </button>
+                        <button @click="activeTab = 'flashcards'" class="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-sm transition flex items-center gap-2">
+                            <i class="fa-solid fa-clone"></i>
+                            <span>مراجعة البطاقات</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </section>
 
-        <!-- TAB 4: FULL DICTIONARY (القاموس الشامل 10,000 كلمة) -->
+        <!-- TAB 4: FULL DICTIONARY (القاموس الشامل 10,000 كلمة مع بحث لحظي) -->
         <section x-show="activeTab === 'dictionary'" class="space-y-6">
             <!-- Search & Filters Bar -->
             <div class="bg-white rounded-3xl border border-slate-200 p-4 sm:p-6 shadow-sm space-y-4">
@@ -443,6 +729,30 @@
                         <option value="B2">المستوى B2 (5001-7500)</option>
                         <option value="C1/C2">المستوى C1/C2 (7501-10000)</option>
                     </select>
+
+                    <!-- Status Filter -->
+                    <select x-model="statusFilter" class="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none">
+                        <option value="all">كل الحالات (الكل)</option>
+                        <option value="learned">الكلمات المتقنة فقط ✓</option>
+                        <option value="unlearned">غير المحفوظة فقط ⏳</option>
+                        <option value="favorites">المفضلة فقط ⭐</option>
+                        <option value="difficult">الصعبة فقط ⚠️</option>
+                    </select>
+                </div>
+
+                <!-- Active Filter Tags & Count -->
+                <div class="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
+                    <div>
+                        تم العثور على <span class="font-bold text-emerald-700 font-inter" x-text="filteredDictionary.length"></span> كلمة مطابقة
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span>عدد العناصر بالصفحة:</span>
+                        <select x-model.number="pageSize" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs">
+                            <option :value="20">20</option>
+                            <option :value="50">50</option>
+                            <option :value="100">100</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -452,21 +762,35 @@
                     <table class="w-full text-right text-sm">
                         <thead class="bg-slate-50 text-slate-500 border-b border-slate-200 font-bold text-xs uppercase">
                             <tr>
-                                <th class="py-4 px-4 text-center">#</th>
+                                <th class="py-4 px-3 text-center w-12">#</th>
+                                <th class="py-4 px-3 text-center w-10">⭐</th>
                                 <th class="py-4 px-4">الكلمة البرتغالية</th>
-                                <th class="py-4 px-4 text-center">النطق</th>
+                                <th class="py-4 px-4 text-center">النطق التقريبي</th>
                                 <th class="py-4 px-4">النوع</th>
                                 <th class="py-4 px-4">الترجمة بالعربية</th>
                                 <th class="py-4 px-4 text-center">المستوى</th>
                                 <th class="py-4 px-4">مثال تطبيقي</th>
-                                <th class="py-4 px-4 text-center">صوت</th>
+                                <th class="py-4 px-4 text-center">حالة الإتقان</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             <template x-for="item in paginatedDictionary" :key="item.id">
-                                <tr class="hover:bg-slate-50/80 transition">
-                                    <td class="py-3 px-4 text-center text-xs text-slate-400 font-inter" x-text="item.id"></td>
-                                    <td class="py-3 px-4 font-bold text-slate-900 font-inter text-base" x-text="item.word"></td>
+                                <tr class="hover:bg-slate-50/80 transition" :class="learnedWords.includes(item.id) ? 'bg-emerald-50/20' : ''">
+                                    <td class="py-3 px-3 text-center text-xs text-slate-400 font-inter" x-text="item.id"></td>
+                                    <td class="py-3 px-3 text-center">
+                                        <button @click="toggleFavorite(item.id)" class="text-slate-300 hover:text-amber-500 transition"
+                                                :class="favoriteWords.includes(item.id) ? 'text-amber-500' : ''" title="إضافة للمفضلة">
+                                            <i class="fa-solid fa-star"></i>
+                                        </button>
+                                    </td>
+                                    <td class="py-3 px-4">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-bold text-slate-900 font-inter text-base" x-text="item.word"></span>
+                                            <button @click="speak(item.word)" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-emerald-100 text-emerald-700 flex items-center justify-center transition" title="نطق الكلمة">
+                                                <i class="fa-solid fa-volume-high text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </td>
                                     <td class="py-3 px-4 text-center text-xs text-emerald-700 font-semibold" x-text="item.phonetic"></td>
                                     <td class="py-3 px-4 text-xs text-slate-500" x-text="item.pos"></td>
                                     <td class="py-3 px-4 font-bold text-slate-800" x-text="item.translation"></td>
@@ -474,19 +798,22 @@
                                         <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800" x-text="item.level"></span>
                                     </td>
                                     <td class="py-3 px-4 text-xs text-slate-600 max-w-xs">
-                                        <div class="flex items-start justify-between gap-3">
+                                        <div class="flex items-start justify-between gap-2">
                                             <div>
                                                 <p class="font-inter text-slate-900 font-medium dir-ltr text-left" x-text="item.example"></p>
                                                 <p class="text-slate-400 mt-0.5" x-text="item.exampleTr"></p>
                                             </div>
-                                            <button @click="speak(item.example)" class="shrink-0 w-7 h-7 rounded-full bg-slate-100 hover:bg-blue-100 text-blue-700 flex items-center justify-center transition" title="نطق المثال">
-                                                <i class="fa-solid fa-comment-dots text-xs"></i>
+                                            <button @click="speak(item.example)" class="shrink-0 w-6 h-6 rounded-full bg-slate-100 hover:bg-blue-100 text-blue-700 flex items-center justify-center transition" title="نطق المثال">
+                                                <i class="fa-solid fa-comment-dots text-[10px]"></i>
                                             </button>
                                         </div>
                                     </td>
                                     <td class="py-3 px-4 text-center">
-                                        <button @click="speak(item.word)" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-emerald-100 text-emerald-700 flex items-center justify-center transition" title="نطق الكلمة">
-                                            <i class="fa-solid fa-volume-high text-xs"></i>
+                                        <button @click="toggleLearned(item.id)"
+                                                :class="learnedWords.includes(item.id) ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 hover:bg-emerald-50 text-slate-400 hover:text-emerald-700'"
+                                                class="px-2.5 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1 mx-auto">
+                                            <i class="fa-solid" :class="learnedWords.includes(item.id) ? 'fa-check' : 'fa-plus'"></i>
+                                            <span x-text="learnedWords.includes(item.id) ? 'متقنة' : 'حفظ'"></span>
                                         </button>
                                     </td>
                                 </tr>
@@ -498,58 +825,89 @@
                 <!-- Pagination Footer -->
                 <div class="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
                     <div>
-                        عرض الكلمات من <span class="font-bold text-slate-800" x-text="(currentPage - 1) * pageSize + 1"></span> إلى <span class="font-bold text-slate-800" x-text="Math.min(currentPage * pageSize, filteredDictionary.length)"></span> من أصل <span class="font-bold text-slate-800" x-text="filteredDictionary.length"></span> كلمة
+                        عرض الكلمات من <span class="font-bold text-slate-800 font-inter" x-text="filteredDictionary.length > 0 ? (currentPage - 1) * pageSize + 1 : 0"></span> إلى <span class="font-bold text-slate-800 font-inter" x-text="Math.min(currentPage * pageSize, filteredDictionary.length)"></span> من أصل <span class="font-bold text-slate-800 font-inter" x-text="filteredDictionary.length"></span> كلمة
                     </div>
 
                     <div class="flex items-center gap-2">
-                        <button @click="currentPage--" :disabled="currentPage === 1" class="px-3 py-1.5 rounded-xl border bg-white disabled:opacity-50">السابق</button>
-                        <span class="font-bold font-inter" x-text="currentPage + ' / ' + maxPage"></span>
-                        <button @click="currentPage++" :disabled="currentPage >= maxPage" class="px-3 py-1.5 rounded-xl border bg-white disabled:opacity-50">التالي</button>
+                        <button @click="currentPage = 1" :disabled="currentPage === 1" class="px-2.5 py-1.5 rounded-xl border bg-white disabled:opacity-40" title="الصفحة الأولى">«</button>
+                        <button @click="currentPage--" :disabled="currentPage === 1" class="px-3 py-1.5 rounded-xl border bg-white disabled:opacity-40">السابق</button>
+                        <span class="font-bold font-inter text-slate-700" x-text="currentPage + ' / ' + maxPage"></span>
+                        <button @click="currentPage++" :disabled="currentPage >= maxPage" class="px-3 py-1.5 rounded-xl border bg-white disabled:opacity-40">التالي</button>
+                        <button @click="currentPage = maxPage" :disabled="currentPage >= maxPage" class="px-2.5 py-1.5 rounded-xl border bg-white disabled:opacity-40" title="الصفحة الأخيرة">»</button>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- TAB 5: VERB CONJUGATOR (تصريف الأفعال البرتغالية) -->
-        <section x-show="activeTab === 'verbs'" class="space-y-6 max-w-4xl mx-auto">
+        <!-- TAB 5: VERB CONJUGATOR (تصريف الأفعال البرتغالية الشاملة) -->
+        <section x-show="activeTab === 'verbs'" class="space-y-6 max-w-5xl mx-auto">
             <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-6">
-                <div class="border-b border-slate-100 pb-4">
-                    <span class="text-xs text-emerald-600 font-bold">جدول الأفعال الأساسية والتصريفات</span>
-                    <h2 class="text-2xl font-black text-slate-900">أهم الأفعال الشاذة والمنتظمة في البرتغالية</h2>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                    <div>
+                        <span class="text-xs text-emerald-600 font-bold">جدول الأفعال الأساسية والتصريفات</span>
+                        <h2 class="text-2xl font-black text-slate-900">أهم الأفعال الشاذة والمنتظمة في البرتغالية البرازيلية</h2>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-400">تصفية:</span>
+                        <select x-model="verbFilter" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700">
+                            <option value="ALL">جميع الأفعال</option>
+                            <option value="شاذ">الأفعال الشاذة فقط</option>
+                            <option value="منتظم">الأفعال المنتظمة</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <template x-for="verb in verbList" :key="verb.infinitive">
-                        <div class="border border-slate-200 rounded-2xl p-5 hover:border-emerald-300 transition space-y-3 bg-slate-50/50">
+                    <template x-for="verb in filteredVerbs" :key="verb.infinitive">
+                        <div class="border border-slate-200 rounded-3xl p-5 hover:border-emerald-300 transition space-y-3 bg-slate-50/50 hover:bg-white hover:shadow-sm">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-2">
                                     <h3 class="text-xl font-bold font-inter text-slate-900" x-text="verb.infinitive"></h3>
-                                    <button @click="speak(verb.infinitive)" class="text-emerald-600 text-sm">
+                                    <button @click="speak(verb.infinitive)" class="text-emerald-600 hover:text-emerald-700 text-sm">
                                         <i class="fa-solid fa-volume-high"></i>
                                     </button>
                                 </div>
-                                <span class="text-xs px-2.5 py-1 rounded-full font-bold bg-amber-100 text-amber-800" x-text="verb.type"></span>
+                                <span class="text-xs px-2.5 py-1 rounded-full font-bold"
+                                      :class="verb.type.includes('شاذ') ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'" x-text="verb.type"></span>
                             </div>
 
                             <p class="text-sm font-bold text-slate-700" x-text="'المعنى: ' + verb.meaning"></p>
 
-                            <div class="space-y-1.5 text-xs bg-white p-3 rounded-xl border border-slate-100">
-                                <div class="flex justify-between">
-                                    <span class="text-slate-400">المضارع (Eu / Você):</span>
-                                    <span class="font-bold text-slate-800 font-inter dir-ltr" x-text="verb.present"></span>
+                            <div class="space-y-2 text-xs bg-white p-3.5 rounded-2xl border border-slate-100">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-slate-400">الحاضر (Presente):</span>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="font-bold text-slate-800 font-inter dir-ltr" x-text="verb.present"></span>
+                                        <button @click="speak(verb.present)" class="text-slate-300 hover:text-emerald-600"><i class="fa-solid fa-volume-high text-[10px]"></i></button>
+                                    </div>
                                 </div>
-                                <div class="flex justify-between">
+                                <div class="flex justify-between items-center">
                                     <span class="text-slate-400">الماضي (Passado):</span>
-                                    <span class="font-bold text-slate-800 font-inter dir-ltr" x-text="verb.past"></span>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="font-bold text-slate-800 font-inter dir-ltr" x-text="verb.past"></span>
+                                        <button @click="speak(verb.past)" class="text-slate-300 hover:text-emerald-600"><i class="fa-solid fa-volume-high text-[10px]"></i></button>
+                                    </div>
                                 </div>
-                                <div class="flex justify-between">
+                                <div class="flex justify-between items-center">
                                     <span class="text-slate-400">المستقبل (Futuro):</span>
-                                    <span class="font-bold text-slate-800 font-inter dir-ltr" x-text="verb.future"></span>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="font-bold text-slate-800 font-inter dir-ltr" x-text="verb.future"></span>
+                                        <button @click="speak(verb.future)" class="text-slate-300 hover:text-emerald-600"><i class="fa-solid fa-volume-high text-[10px]"></i></button>
+                                    </div>
                                 </div>
-                                <div class="flex justify-between border-t border-slate-100 pt-1.5">
+                                <div class="flex justify-between items-center border-t border-slate-100 pt-2">
                                     <span class="text-emerald-600 font-semibold">صيغة الاستمرار (Gerúndio):</span>
-                                    <span class="font-bold text-emerald-700 font-inter dir-ltr" x-text="verb.gerund"></span>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="font-bold text-emerald-700 font-inter dir-ltr" x-text="verb.gerund"></span>
+                                        <button @click="speak(verb.gerund)" class="text-slate-300 hover:text-emerald-600"><i class="fa-solid fa-volume-high text-[10px]"></i></button>
+                                    </div>
                                 </div>
+                            </div>
+
+                            <!-- Example sentence with verb -->
+                            <div x-show="verb.example" class="text-xs bg-slate-100/70 p-2.5 rounded-xl flex items-center justify-between">
+                                <span class="font-inter text-slate-700 font-medium dir-ltr" x-text="verb.example"></span>
+                                <button @click="speak(verb.example)" class="text-emerald-600 hover:text-emerald-800 mr-2"><i class="fa-solid fa-volume-high text-xs"></i></button>
                             </div>
                         </div>
                     </template>
@@ -557,25 +915,31 @@
             </div>
         </section>
 
-        <!-- TAB 6: BRAZILIAN SLANG (العامية البرازيلية Gírias) -->
-        <section x-show="activeTab === 'slang'" class="space-y-6 max-w-4xl mx-auto">
+        <!-- TAB 6: BRAZILIAN SLANG (العامية البرازيلية Gírias do Brasil) -->
+        <section x-show="activeTab === 'slang'" class="space-y-6 max-w-5xl mx-auto">
             <div class="bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-3xl p-6 sm:p-8 shadow-lg">
                 <h2 class="text-2xl sm:text-3xl font-black mb-2">Gírias do Brasil 🤙</h2>
-                <p class="text-emerald-100 text-sm">أشهر مصطلحات الشارع والمحادثات اليودية التي يستخدمها البرازيليون في حياتهم اليومية!</p>
+                <p class="text-emerald-100 text-sm">أشهر مصطلحات الشارع والمحادثات اليومية التي يستخدمها البرازيليون في حياتهم وتمنحك طلاقة متحدث أصلي!</p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <template x-for="slang in slangList" :key="slang.phrase">
-                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition space-y-3">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-bold text-slate-900 font-inter" x-text="slang.phrase"></h3>
-                            <button @click="speak(slang.phrase)" class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                                <i class="fa-solid fa-volume-high text-xs"></i>
-                            </button>
+                    <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition space-y-3 flex flex-col justify-between">
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-bold text-slate-900 font-inter" x-text="slang.phrase"></h3>
+                                <button @click="speak(slang.phrase)" class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center transition" title="استمع للنطق">
+                                    <i class="fa-solid fa-volume-high text-xs"></i>
+                                </button>
+                            </div>
+                            <p class="text-xs text-emerald-700 font-semibold font-mono" x-text="'[' + slang.phonetic + ']'"></p>
+                            <h4 class="font-bold text-amber-600 text-sm" x-text="slang.meaning"></h4>
+                            <p class="text-xs text-slate-500 leading-relaxed" x-text="slang.context"></p>
                         </div>
-                        <p class="text-xs text-emerald-700 font-semibold" x-text="'[' + slang.phonetic + ']'"></p>
-                        <h4 class="font-bold text-amber-600 text-sm" x-text="slang.meaning"></h4>
-                        <p class="text-xs text-slate-500 leading-relaxed" x-text="slang.context"></p>
+                        <div x-show="slang.example" class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs flex items-center justify-between">
+                            <span class="font-inter text-slate-700 dir-ltr text-left" x-text="slang.example"></span>
+                            <button @click="speak(slang.example)" class="text-slate-400 hover:text-emerald-600 mr-2"><i class="fa-solid fa-volume-high text-xs"></i></button>
+                        </div>
                     </div>
                 </template>
             </div>
@@ -583,7 +947,7 @@
 
         <!-- TAB 7: GEMINI AI TUTOR (مُعلم الذكاء الاصطناعي) -->
         <section x-show="activeTab === 'ai_tutor'" class="space-y-6 max-w-3xl mx-auto">
-            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4 flex flex-col h-[600px]">
+            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4 flex flex-col h-[620px]">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-4">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-lg">
@@ -594,15 +958,27 @@
                             <p class="text-xs text-slate-400">تدرّب على المحادثة، اسأل عن القواعد، وتلقّ إجابات فورية</p>
                         </div>
                     </div>
+                    <div class="flex items-center gap-2">
+                        <button @click="clearChat()" class="text-xs text-slate-400 hover:text-red-500 p-1.5 rounded-lg transition" title="مسح سجل الدردشة">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                        <button @click="apiKeyInput = userApiKey; showApiKeyModal = true" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition border border-slate-200">
+                            <i class="fa-solid fa-key text-amber-500"></i>
+                            <span x-text="userApiKey ? 'المفتاح مفعّل ✓' : 'إعداد مفتاح API'"></span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Chat History Messages -->
                 <div class="flex-1 overflow-y-auto space-y-3 p-2" id="chatContainer">
                     <template x-for="(msg, idx) in chatMessages" :key="idx">
                         <div :class="msg.role === 'user' ? 'justify-end' : 'justify-start'" class="flex">
-                            <div :class="msg.role === 'user' ? 'bg-emerald-600 text-white rounded-2xl rounded-tl-none' : 'bg-slate-100 text-slate-800 rounded-2xl rounded-tr-none'"
-                                 class="max-w-[85%] p-4 text-sm leading-relaxed whitespace-pre-wrap">
+                            <div :class="msg.role === 'user' ? 'bg-emerald-600 text-white rounded-3xl rounded-tl-none' : 'bg-slate-100 text-slate-800 rounded-3xl rounded-tr-none'"
+                                 class="max-w-[85%] p-4 text-sm leading-relaxed whitespace-pre-wrap relative group shadow-sm">
                                 <span x-text="msg.text"></span>
+                                <button x-show="msg.role === 'model'" @click="speak(msg.text)" class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white shadow border border-slate-200 text-emerald-600 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition" title="استمع للنص">
+                                    <i class="fa-solid fa-volume-high"></i>
+                                </button>
                             </div>
                         </div>
                     </template>
@@ -613,11 +989,14 @@
                     <button @click="sendSuggestedPrompt('تدرّب معي على حوار في مطعم برازيلي')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full font-medium whitespace-nowrap">
                         💬 حوار في مطعم
                     </button>
-                    <button @click="sendSuggestedPrompt('اشرح لي الفرق بين الفعلين Ser و Estar')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full font-medium whitespace-nowrap">
+                    <button @click="sendSuggestedPrompt('اشرح لي الفرق بين الفعلين Ser و Estar بالأمثلة')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full font-medium whitespace-nowrap">
                         📖 الفرق بين Ser و Estar
                     </button>
-                    <button @click="sendSuggestedPrompt('اعطني 3 جمل مع كلمة Beleza')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full font-medium whitespace-nowrap">
+                    <button @click="sendSuggestedPrompt('اعطني 3 جمل برازيلية شائعة مع كلمة Beleza')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full font-medium whitespace-nowrap">
                         💡 جمل مع Beleza
+                    </button>
+                    <button @click="sendSuggestedPrompt('اختبرني في 5 كلمات من المستوى A1')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full font-medium whitespace-nowrap">
+                        🎯 اختبرني
                     </button>
                 </div>
 
@@ -625,7 +1004,7 @@
                 <form @submit.prevent="sendChatMessage()" class="flex gap-2">
                     <input type="text" x-model="chatInput" placeholder="اكتب سؤالك أو ابدأ بالدردشة بالبرتغالية..."
                            class="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500">
-                    <button type="submit" :disabled="chatLoading" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-3 rounded-2xl text-sm transition disabled:opacity-50 flex items-center gap-2">
+                    <button type="submit" :disabled="chatLoading" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-3 rounded-2xl text-sm transition disabled:opacity-50 flex items-center gap-2 shadow-md">
                         <span x-text="chatLoading ? 'جاري التفكير...' : 'إرسال'"></span>
                         <i class="fa-solid fa-paper-plane text-xs"></i>
                     </button>
@@ -639,7 +1018,7 @@
     <footer class="bg-white border-t border-slate-200 py-6 mt-12">
         <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400 space-y-2">
             <p class="font-bold text-slate-600">FalaBrasil - منصة التعلم الشامل لـ 10,000 كلمة برتغالية برازيلية 🇧🇷</p>
-            <p>مصمم بمنهجية التكرار المتباعد (Spaced Repetition) ومستويات CEFR الأوروبية.</p>
+            <p>مصمم بمنهجية التكرار المتباعد (Spaced Repetition) ومستويات CEFR الأوروبية • يعمل بدون إنترنت (Offline Mode)</p>
         </div>
     </footer>
 
@@ -649,11 +1028,28 @@
             return {
                 activeTab: 'stages',
                 mobileMenuOpen: false,
-                xp: 120,
-                streak: 4,
-                learnedWords: [1, 2, 3, 4, 5],
+                showProfileModal: false,
+
+                // Gamification State (Connected to System)
+                xp: 0,
+                streak: 1,
+                learnedWords: [],
+                favoriteWords: [],
+                difficultWords: [],
+
+                // Toast Notification
+                toast: { show: false, message: '', type: 'success', icon: '' },
+
+                // Dictionary Data State
+                dictionaryLoaded: false,
+                isParsing: false,
+                isAutoLoading: false,
+                fullDictionary: [],
+
+                // Dictionary Tab Filters
                 searchQuery: '',
                 selectedLevel: 'ALL',
+                statusFilter: 'all',
                 currentPage: 1,
                 pageSize: 20,
 
@@ -662,22 +1058,28 @@
                 currentStageCode: 'A1',
                 currentCardIndex: 0,
                 isFlipped: false,
+                deckFilter: 'all',
 
                 // Quiz State
+                quizLevel: 'ALL',
                 quizQuestionIndex: 0,
                 quizScore: 0,
+                quizCorrectCount: 0,
                 quizAnswered: false,
+                quizCompleted: false,
                 selectedOption: null,
 
-                // Dictionary Data State
-                dictionaryLoaded: true,
-                isParsing: false,
+                // Verb Filter
+                verbFilter: 'ALL',
 
                 // AI Chatbot State
+                userApiKey: localStorage.getItem('gemini_api_key') || '',
+                apiKeyInput: '',
+                showApiKeyModal: false,
                 chatInput: '',
                 chatLoading: false,
                 chatMessages: [
-                    { role: 'model', text: 'Olá! أهلاً بك! أنا معلمك الذكي للغة البرتغالية البرازيلية. كيف يمكنني مساعدتك اليوم في تعلم الـ 10,000 كلمة؟' }
+                    { role: 'model', text: 'Olá! أهلاً بك! أنا معلمك الذكي للغة البرتغالية البرازيلية 🇧🇷. اسألني عن معاني الكلمات، تصريف الأفعال، أو تدرّب معي على حوارات يومية!' }
                 ],
 
                 tabs: [
@@ -698,166 +1100,109 @@
                     { level: 5, code: 'C1/C2', title: 'إتقان واحتراف', range: 'الكلمات 7,501 - 10,000', count: 2500, coverage: '99%+', desc: 'المصطلحات التخصصية، البلاغة اللغوية، وعامية الشارع المتقدمة.', badgeColor: 'bg-purple-100 text-purple-800' },
                 ],
 
-                // Base Vocabulary Catalog - Rich A1 and A2 foundation
+                // Comprehensive Verbs List with Audio & Sentences
+                verbList: [
+                    { infinitive: 'ser', type: 'شاذ (Irregular)', meaning: 'أن يكون (دائم / هوية)', present: 'Eu sou / Você é', past: 'Eu fui / Você foi', future: 'Vou ser', gerund: 'sendo', example: 'Eu sou brasileiro.' },
+                    { infinitive: 'estar', type: 'شاذ (Irregular)', meaning: 'أن يكون (مؤقت / موقع)', present: 'Eu estou / Você está', past: 'Eu estive / Você esteve', future: 'Vou estar', gerund: 'estando', example: 'Estou muito feliz hoje.' },
+                    { infinitive: 'ter', type: 'شاذ (Irregular)', meaning: 'أن يملك / يوجد', present: 'Eu tenho / Você tem', past: 'Eu tive / Você teve', future: 'Vou ter', gerund: 'tendo', example: 'Eu tenho uma reunião.' },
+                    { infinitive: 'fazer', type: 'شاذ (Irregular)', meaning: 'أن يفعل / يصنع', present: 'Eu faço / Você faz', past: 'Eu fiz / Você fez', future: 'Vou fazer', gerund: 'fazendo', example: 'O que você vai fazer?' },
+                    { infinitive: 'ir', type: 'شاذ (Irregular)', meaning: 'أن يذهب', present: 'Eu vou / Você vai', past: 'Eu fui / Você foi', future: 'Vou ir', gerund: 'indo', example: 'Nós vamos ao cinema.' },
+                    { infinitive: 'ficar', type: 'منتظم (-ar)', meaning: 'أن يبقى / يصبح / يقع', present: 'Eu fico / Você fica', past: 'Eu fiquei / Você ficou', future: 'Vou ficar', gerund: 'ficando', example: 'Vou ficar em casa.' },
+                    { infinitive: 'poder', type: 'شاذ (Irregular)', meaning: 'أن يستطيع / يقدر', present: 'Eu posso / Você pode', past: 'Eu pude / Você pôde', future: 'Vou poder', gerund: 'podendo', example: 'Você pode me ajudar?' },
+                    { infinitive: 'saber', type: 'شاذ (Irregular)', meaning: 'أن يعرف / يعلم', present: 'Eu sei / Você sabe', past: 'Eu soube / Você soube', future: 'Vou saber', gerund: 'sabendo', example: 'Eu sei como resolver.' },
+                    { infinitive: 'querer', type: 'شاذ (Irregular)', meaning: 'أن يريد / يرغب', present: 'Eu quero / Você quer', past: 'Eu quis / Você quis', future: 'Vou querer', gerund: 'querendo', example: 'Eu quero aprender português.' },
+                    { infinitive: 'dar', type: 'شاذ (Irregular)', meaning: 'أن يعطي / يمنح', present: 'Eu dou / Você dá', past: 'Eu dei / Você deu', future: 'Vou dar', gerund: 'dando', example: 'Pode me dar um minuto?' },
+                    { infinitive: 'dizer', type: 'شاذ (Irregular)', meaning: 'أن يقول', present: 'Eu digo / Você diz', past: 'Eu disse / Você disse', future: 'Vou dizer', gerund: 'dizendo', example: 'O que você disse?' },
+                    { infinitive: 'falar', type: 'منتظم (-ar)', meaning: 'أن يتحدث', present: 'Eu falo / Você fala', past: 'Eu falei / Você falou', future: 'Vou falar', gerund: 'falando', example: 'Eu falo português fluentemente.' },
+                    { infinitive: 'ver', type: 'شاذ (Irregular)', meaning: 'أن يرى / يشاهد', present: 'Eu vejo / Você vê', past: 'Eu vi / Você viu', future: 'Vou ver', gerund: 'vendo', example: 'Quero ver esse jogo.' },
+                    { infinitive: 'vir', type: 'شاذ (Irregular)', meaning: 'أن يأتي', present: 'Eu venho / Você vem', past: 'Eu vim / Você veio', future: 'Vou vir', gerund: 'vindo', example: 'Eles vêm amanhã cedo.' },
+                    { infinitive: 'comer', type: 'منتظم (-er)', meaning: 'أن يأكل', present: 'Eu como / Você come', past: 'Eu comi / Você comeu', future: 'Vou comer', gerund: 'comendo', example: 'Vamos comer um lanche.' },
+                    { infinitive: 'beber', type: 'منتظم (-er)', meaning: 'أن يشرب', present: 'Eu bebo / Você bebe', past: 'Eu bebi / Você bebeu', future: 'Vou beber', gerund: 'bebendo', example: 'Eu gosto de beber café.' },
+                ],
+
+                // Rich Brazilian Slang List
+                slangList: [
+                    { phrase: 'Tudo bem?', phonetic: 'تودو بين؟', meaning: 'كيف حالك؟ / كل شيء تمام؟', context: 'التحية الرسمية والأكثر استخداماً في عموم البرازيل.', example: 'Olá, tudo bem com você?' },
+                    { phrase: 'E aí?', phonetic: 'إي أي؟', meaning: 'أهلاً! / ما الأخبار؟', context: 'تحية عامية سريعة جداً وشائعة بين الأصدقاء والشباب.', example: 'E aí, cara! Beleza?' },
+                    { phrase: 'Beleza!', phonetic: 'بيليزا!', meaning: 'روعة! / تمام! / موافق!', context: 'تستخدم للتأكيد والموافقة بالحماس، وتعني حرفياً (جمال).', example: 'Combinado então, beleza!' },
+                    { phrase: 'Massa!', phonetic: 'ماسا!', meaning: 'رهيب! / ممتاز جداً!', context: 'تعبير إعجاب منتشر في شمال البرازيل وكافة المناطق.', example: 'Esse aplicativo é muito massa!' },
+                    { phrase: 'Legal!', phonetic: 'ليغال!', meaning: 'جميل / رائع / ممتاز', context: 'التعبير الأكثر انتشاراً عن الاستحسان في كافة المواقف.', example: 'Que projeto legal você fez!' },
+                    { phrase: 'Valeu!', phonetic: 'فاليو!', meaning: 'شكراً! / يعطيك العافية!', context: 'اختصار عامي سريع لقول شكراً جزيلاً.', example: 'Valeu pela ajuda, amigo!' },
+                    { phrase: 'Cara', phonetic: 'كارا', meaning: 'يا رجل / يا صاح', context: 'تستخدم لمناداة الصديق المقرب مثل dude بالإنجليزية.', example: 'Cara, você não sabe o que aconteceu.' },
+                    { phrase: 'Fechado!', phonetic: 'فيشادو!', meaning: 'تم الاتفاق! / خلاص معتمد!', context: 'تقال عند إنهاء اتفاق أو موعد عمل أو لقاء.', example: 'Nos vemos às 15h, fechado?' },
+                    { phrase: 'Gambiarra', phonetic: 'غامبيارا', meaning: 'حل ذكي مؤقت / ترقيع مبتكر', context: 'أشهر مصطلح ثقافي برازيلي لحل المشاكل بأدوات بسيطة.', example: 'Fiz uma gambiarra e funcionou!' },
+                    { phrase: 'Partiu!', phonetic: 'بارتشيو!', meaning: 'انطلقنا! / ياللا بينا!', context: 'تقال عند المغادرة أو البدء في نشاط ممتع.', example: 'Partiu praia!' },
+                    { phrase: 'Rolê', phonetic: 'روليه', meaning: 'مشوار / خرجة مع الأصدقاء', context: 'كلمة دارجة للتعبير عن الخروج في نزهة أو سهرة.', example: 'Vamos dar um rolê hoje?' },
+                    { phrase: 'Ficar de boa', phonetic: 'فيكار دجي بوا', meaning: 'الاسترخاء / راحة البال', context: 'تعني البقاء في هدوء وبدون مشاكل.', example: 'Hoje eu só quero ficar de boa.' },
+                    { phrase: 'Pô!', phonetic: 'بو!', meaning: 'يا إلهي! / معقولة؟!', context: 'تعبير تعجب واستنكار أو حماس سريع جداً.', example: 'Pô, você mandou muito bem!' },
+                    { phrase: 'Dar ruim', phonetic: 'دار رويم', meaning: 'خربت الأمور / فشلت', context: 'تقال عندما تسير خطة ما بشكل غير متوقع وسيئ.', example: 'O trânsito parou, vai dar ruim.' },
+                    { phrase: 'Dar bom', phonetic: 'دار بوم', meaning: 'ضبطت الأمور ونجحت!', context: 'عكس dar ruim، تقال عند نجاح أمر ما بنتيجة مبهرة.', example: 'Deu muito bom o nosso teste!' },
+                    { phrase: 'Show de bola!', phonetic: 'شو دجي بولا!', meaning: 'إبداع خالص! / قمة الروعة!', context: 'مستوحى من كرة القدم البرازيلية لوصف أي شيء رائع.', example: 'A apresentação foi show de bola!' },
+                ],
+
+                // Sample vocabulary in case fetch is blocked offline
                 rawDictionary: [
-                    // Core Verbs
                     { id: 1, word: "ser", phonetic: "سير", pos: "فعل (Verb)", translation: "أن يكون (دائم / هوية)", level: "A1", example: "Eu sou desenvolvedor de software.", exampleTr: "أنا مبرمج برمجيات." },
-                    { id: 2, word: "estar", phonetic: "إستار", pos: "فعل (Verb)", translation: "أن يكون (حالة مؤقتة / موقع)", level: "A1", example: "Como você está hoje?", exampleTr: "كيف حالك اليوم؟" },
-                    { id: 3, word: "ter", phonetic: "تير", pos: "فعل (Verb)", translation: "أن يملك / يوجد (في العامية)", level: "A1", example: "Eu tenho uma reunião às 10h.", exampleTr: "لدي اجتماع في الساعة 10." },
+                    { id: 2, word: "estar", phonetic: "إستار", pos: "فعل (Verb)", translation: "أن يكون (مؤقت / موقع)", level: "A1", example: "Como você está hoje?", exampleTr: "كيف حالك اليوم؟" },
+                    { id: 3, word: "ter", phonetic: "تير", pos: "فعل (Verb)", translation: "أن يملك / يوجد", level: "A1", example: "Eu tenho uma reunião às 10h.", exampleTr: "لدي اجتماع في الساعة 10." },
                     { id: 4, word: "fazer", phonetic: "فازير", pos: "فعل (Verb)", translation: "أن يفعل / يصنع", level: "A1", example: "O que você está fazendo?", exampleTr: "ماذا تفعل؟" },
                     { id: 5, word: "ir", phonetic: "إير", pos: "فعل (Verb)", translation: "أن يذهب", level: "A1", example: "Vou ao escritório amanhã.", exampleTr: "سأذهب إلى المكتب غداً." },
-                    { id: 6, word: "poder", phonetic: "بودير", pos: "فعل (Verb)", translation: "أن يستطيع / يقدر", level: "A1", example: "Você pode me ajudar?", exampleTr: "هل يمكنك مساعدتي؟" },
-                    { id: 7, word: "saber", phonetic: "سابير", pos: "فعل (Verb)", translation: "أن يعرف / يعلم", level: "A1", example: "Eu sei como resolver isso.", exampleTr: "أعرف كيف أحل هذا." },
-                    { id: 8, word: "querer", phonetic: "كيرير", pos: "فعل (Verb)", translation: "أن يريد / يرغب", level: "A1", example: "Eu quero aprender português.", exampleTr: "أريد تعلم البرتغالية." },
-                    { id: 9, word: "dizer", phonetic: "دجيزير", pos: "فعل (Verb)", translation: "أن يقول", level: "A1", example: "O que você disse?", exampleTr: "ماذا قلت؟" },
-                    { id: 10, word: "dar", phonetic: "دار", pos: "فعل (Verb)", translation: "أن يعطي / يمنح", level: "A1", example: "Pode me dar um minuto?", exampleTr: "هل يمكنك إعطائي دقيقة؟" },
-                    { id: 11, word: "falar", phonetic: "فالار", pos: "فعل (Verb)", translation: "أن يتحدث / يتكلم", level: "A1", example: "Eu falo português.", exampleTr: "أتحدث البرتغالية." },
-                    { id: 12, word: "ver", phonetic: "فير", pos: "فعل (Verb)", translation: "أن يرى", level: "A1", example: "Quero ver este filme.", exampleTr: "أريد مشاهدة هذا الفيلم." },
-                    { id: 13, word: "comer", phonetic: "كومير", pos: "فعل (Verb)", translation: "أن يأكل", level: "A1", example: "Nós vamos comer pizza.", exampleTr: "سوف نأكل البيتزا." },
-                    { id: 14, word: "beber", phonetic: "بيبير", pos: "فعل (Verb)", translation: "أن يشرب", level: "A1", example: "Eu gosto de beber água.", exampleTr: "أحب شرب الماء." },
-                    { id: 15, word: "dormir", phonetic: "دورمير", pos: "فعل (Verb)", translation: "أن ينام", level: "A1", example: "Preciso dormir cedo.", exampleTr: "أحتاج أن أنام مبكراً." },
-                    
-                    // Daily Nouns & Pronouns
-                    { id: 16, word: "eu", phonetic: "إيو", pos: "ضمير (Pronoun)", translation: "أنا", level: "A1", example: "Eu sou do Brasil.", exampleTr: "أنا من البرازيل." },
-                    { id: 17, word: "você", phonetic: "فوسيه", pos: "ضمير (Pronoun)", translation: "أنت", level: "A1", example: "Você fala inglês?", exampleTr: "هل تتحدث الإنجليزية؟" },
-                    { id: 18, word: "ele / ela", phonetic: "إيلي / إيلا", pos: "ضمير (Pronoun)", translation: "هو / هي", level: "A1", example: "Ela é médica.", exampleTr: "هي طبيبة." },
-                    { id: 19, word: "nós", phonetic: "نوس", pos: "ضمير (Pronoun)", translation: "نحن", level: "A1", example: "Nós somos amigos.", exampleTr: "نحن أصدقاء." },
-                    { id: 20, word: "trabalho", phonetic: "تراباليو", pos: "اسم (Noun)", translation: "عمل / شغل", level: "A1", example: "Gosto do meu trabalho.", exampleTr: "أحب عملي." },
-                    { id: 21, word: "tempo", phonetic: "تيمبو", pos: "اسم (Noun)", translation: "وقت / طقس", level: "A1", example: "Não temos muito tempo.", exampleTr: "ليس لدينا الكثير من الوقت." },
-                    { id: 22, word: "dia", phonetic: "دجيا", pos: "اسم (Noun)", translation: "يوم", level: "A1", example: "Tenha um bom dia!", exampleTr: "أتمنى لك يوماً سعيداً!" },
-                    { id: 23, word: "casa", phonetic: "كازا", pos: "اسم (Noun)", translation: "منزل / بيت", level: "A1", example: "Estou indo para casa.", exampleTr: "أنا ذاهب إلى المنزل." },
-                    { id: 24, word: "água", phonetic: "آغوا", pos: "اسم (Noun)", translation: "ماء", level: "A1", example: "Um copo de água, por favor.", exampleTr: "كأس ماء من فضلك." },
-                    { id: 25, word: "café", phonetic: "كافيه", pos: "اسم (Noun)", translation: "قهوة", level: "A1", example: "Eu amo café brasileiro.", exampleTr: "أنا أحب القهوة البرازيلية." },
-                    { id: 26, word: "amigo / amiga", phonetic: "أميعو / أميعا", pos: "اسم (Noun)", translation: "صديق / صديقة", level: "A1", example: "Ele é um bom amigo.", exampleTr: "هو صديق جيد." },
-                    { id: 27, word: "dinheiro", phonetic: "دجينيرو", pos: "اسم (Noun)", translation: "مال", level: "A1", example: "Eu preciso de dinheiro.", exampleTr: "أنا بحاجة إلى المال." },
-                    
-                    // Time and Days
-                    { id: 28, word: "hoje", phonetic: "أوجي", pos: "ظرف (Adv)", translation: "اليوم", level: "A1", example: "Hoje faz calor.", exampleTr: "اليوم الجو حار." },
-                    { id: 29, word: "amanhã", phonetic: "أمانيا", pos: "ظرف (Adv)", translation: "غداً", level: "A1", example: "Até amanhã!", exampleTr: "أراك غداً!" },
-                    { id: 30, word: "ontem", phonetic: "أونتيم", pos: "ظرف (Adv)", translation: "أمس", level: "A1", example: "Ontem eu trabalhei muito.", exampleTr: "أمس عملت كثيراً." },
-                    { id: 31, word: "agora", phonetic: "أغورا", pos: "ظرف (Adv)", translation: "الآن", level: "A1", example: "Vamos começar agora.", exampleTr: "سنبدأ الآن." },
-                    { id: 32, word: "sempre", phonetic: "سيمبري", pos: "ظرف (Adv)", translation: "دائماً", level: "A1", example: "Eu sempre estudo à noite.", exampleTr: "أنا دائماً أدرس في الليل." },
-                    { id: 33, word: "nunca", phonetic: "نونكا", pos: "ظرف (Adv)", translation: "أبداً", level: "A1", example: "Nunca desista.", exampleTr: "لا تستسلم أبداً." },
-                    { id: 34, word: "segunda-feira", phonetic: "سيغوندا فيرا", pos: "اسم (Noun)", translation: "يوم الإثنين", level: "A1", example: "Segunda-feira eu trabalho.", exampleTr: "يوم الإثنين أنا أعمل." },
-                    { id: 35, word: "sexta-feira", phonetic: "سيستا فيرا", pos: "اسم (Noun)", translation: "يوم الجمعة", level: "A1", example: "Sexta-feira é dia de festa.", exampleTr: "الجمعة هو يوم الحفلة." },
-                    
-                    // Basic Adjectives
-                    { id: 36, word: "bom / boa", phonetic: "بوم / بؤا", pos: "صفة (Adj)", translation: "جيد / جيدة", level: "A1", example: "Este livro é muito bom.", exampleTr: "هذا الكتاب جيد جداً." },
-                    { id: 37, word: "grande", phonetic: "غراندشي", pos: "صفة (Adj)", translation: "كبير", level: "A1", example: "A cidade é grande.", exampleTr: "المدينة كبيرة." },
-                    { id: 38, word: "pequeno", phonetic: "بيكينو", pos: "صفة (Adj)", translation: "صغير", level: "A1", example: "O carro é pequeno.", exampleTr: "السيارة صغيرة." },
-                    { id: 39, word: "novo", phonetic: "نوفو", pos: "صفة (Adj)", translation: "جديد", level: "A1", example: "Tenho um celular novo.", exampleTr: "لدي هاتف جديد." },
-                    { id: 40, word: "fácil", phonetic: "فاسيل", pos: "صفة (Adj)", translation: "سهل", level: "A1", example: "Português é fácil.", exampleTr: "البرتغالية سهلة." },
-                    
-                    // A2 Essentials & Tech
-                    { id: 41, word: "computador", phonetic: "كومبوتادور", pos: "اسم (Noun)", translation: "حاسوب", level: "A2", example: "O computador é rápido.", exampleTr: "الحاسوب سريع." },
-                    { id: 42, word: "código", phonetic: "كوديجو", pos: "اسم (Noun)", translation: "كود / شفرة برمجية", level: "A2", example: "O código está limpo.", exampleTr: "الكود نظيف." },
-                    { id: 43, word: "sistema", phonetic: "سيستيما", pos: "اسم (Noun)", translation: "نظام", level: "A2", example: "O sistema está online.", exampleTr: "النظام متصل بالشبكة." },
-                    { id: 44, word: "dados", phonetic: "دادوس", pos: "اسم (Noun)", translation: "بيانات", level: "A2", example: "Análise de dados é importante.", exampleTr: "تحليل البيانات مهم." },
-                    { id: 45, word: "empresa", phonetic: "إمبريزا", pos: "اسم (Noun)", translation: "شركة", level: "A2", example: "A empresa contratou pessoas.", exampleTr: "الشركة وظفت أشخاصاً." },
-                    { id: 46, word: "projeto", phonetic: "بروجيتو", pos: "اسم (Noun)", translation: "مشروع", level: "A2", example: "O projeto termina sexta.", exampleTr: "المشروع ينتهي يوم الجمعة." },
-                    { id: 47, word: "cliente", phonetic: "كلينتشي", pos: "اسم (Noun)", translation: "عميل / زبون", level: "A2", example: "O cliente está feliz.", exampleTr: "العميل سعيد." },
-                    { id: 48, word: "reunião", phonetic: "ريونياو", pos: "اسم (Noun)", translation: "اجتماع", level: "A2", example: "Temos uma reunião agora.", exampleTr: "لدينا اجتماع الآن." },
-                    { id: 49, word: "desenvolvimento", phonetic: "ديزينفولفيمينتو", pos: "اسم (Noun)", translation: "تطوير / تنمية", level: "B1", example: "Desenvolvimento de software.", exampleTr: "تطوير البرمجيات." },
-                    { id: 50, word: "sucesso", phonetic: "سوسيسو", pos: "اسم (Noun)", translation: "نجاح", level: "B1", example: "Desejo muito sucesso!", exampleTr: "أتمنى لك نجاحاً كبيراً!" }
+                    { id: 6, word: "falar", phonetic: "فالار", pos: "فعل (Verb)", translation: "أن يتحدث", level: "A1", example: "Eu falo português.", exampleTr: "أتحدث البرتغالية." },
+                    { id: 7, word: "amigo", phonetic: "أميعو", pos: "اسم (Noun)", translation: "صديق", level: "A1", example: "Ele é meu melhor amigo.", exampleTr: "هو أفضل أصدقائي." },
+                    { id: 8, word: "trabalho", phonetic: "تراباليو", pos: "اسم (Noun)", translation: "عمل / وظيفة", level: "A1", example: "Gosto muito do meu trabalho.", exampleTr: "أحب عملي كثيراً." },
+                    { id: 9, word: "casa", phonetic: "كازا", pos: "اسم (Noun)", translation: "منزل / بيت", level: "A1", example: "Estou indo para casa agora.", exampleTr: "أنا ذاهب إلى البيت الآن." },
+                    { id: 10, word: "obrigado", phonetic: "أوبريغادو", pos: "تعبير", translation: "شكراً لك", level: "A1", example: "Muito obrigado pela ajuda!", exampleTr: "شكراً جزيلاً على المساعدة!" },
                 ],
 
-                verbList: [
-                    { infinitive: 'ser', type: 'شاذ (Irregular)', meaning: 'أن يكون (دائم)', present: 'Eu sou / Você é', past: 'Eu fui / Você foi', future: 'Vou ser', gerund: 'sendo' },
-                    { infinitive: 'estar', type: 'شاذ (Irregular)', meaning: 'أن يكون (مؤقت)', present: 'Eu estou / Você está', past: 'Eu estive / Você esteve', future: 'Vou estar', gerund: 'estando' },
-                    { infinitive: 'ter', type: 'شاذ (Irregular)', meaning: 'أن يملك', present: 'Eu tenho / Você tem', past: 'Eu tive / Você teve', future: 'Vou ter', gerund: 'tendo' },
-                    { infinitive: 'fazer', type: 'شاذ (Irregular)', meaning: 'أن يفعل / يصنع', present: 'Eu faço / Você faz', past: 'Eu fiz / Você fez', future: 'Vou fazer', gerund: 'fazendo' },
-                    { infinitive: 'ir', type: 'شاذ (Irregular)', meaning: 'أن يذهب', present: 'Eu vou / Você vai', past: 'Eu fui / Você foi', future: 'Vou ir', gerund: 'indo' },
-                    { infinitive: 'falar', type: 'منتظم (-ar)', meaning: 'أن يتحدث', present: 'Eu falo / Você fala', past: 'Eu falei / Você falou', future: 'Vou falar', gerund: 'falando' },
-                ],
-
-                slangList: [
-                    { phrase: 'Tudo bem?', phonetic: 'تودو بين؟', meaning: 'كيف حالك؟ / كل شيء تمام؟', context: 'التحية الرسمية والأكثر انتشاراً في البرازيل.' },
-                    { phrase: 'E aí?', phonetic: 'إي أي؟', meaning: 'أهلاً! / ما الأخبار؟', context: 'تحية غير رسمية بين الأصدقاء والشباب.' },
-                    { phrase: 'Beleza!', phonetic: 'بيليزا!', meaning: 'روعة! / تمام! / موافق!', context: 'تستخدم للتأكيد والموافقة بالحماس.' },
-                    { phrase: 'Massa!', phonetic: 'ماسا!', meaning: 'رهيب! / رائع جداً!', context: 'تعبير إعجاب منتشر في شمال البرازيل وكافة المناطق.' },
-                    { phrase: 'Legal!', phonetic: 'ليغال!', meaning: 'جميل / ممتاز', context: 'تعبير عام عن الاستحسان في كل المواقف.' },
-                    { phrase: 'Valeu!', phonetic: 'فاليو!', meaning: 'شكراً! / يعطيك العافية!', context: 'اختصار عامي سريع لقول شكراً.' },
-                    { phrase: 'Cara', phonetic: 'كارا', meaning: 'يا رجل / يا صاح', context: 'تقال عند مخاطبة الأصدقاء المقربين.' },
-                    { phrase: 'Fechado!', phonetic: 'فيشادو!', meaning: 'تم الاتفاق! / تم!', context: 'تقال عند إنهاء اتفاق أو موعد عمل.' },
-                ],
-
-                fullDictionary: [],
-
+                // INITIALIZATION
                 async initApp() {
-                    // 1. تحميل تقدم المستخدم (النقاط، المستويات)
                     this.loadProgress();
+                    this.checkStreak();
+                    this.apiKeyInput = this.userApiKey;
 
-                    this.dictionaryLoaded = false;
-                    // 2. محاولة جلب القاموس المحفوظ مسبقاً من قاعدة بيانات المتصفح
+                    // 1. Try local storage cache
                     try {
                         const storedDict = await localforage.getItem('falaBrasil_dictionary');
-                        if (storedDict && storedDict.length > 0) {
+                        if (storedDict && Array.isArray(storedDict) && storedDict.length > 0) {
                             this.fullDictionary = storedDict;
                             this.dictionaryLoaded = true;
                             this.startStage(1);
+                            return;
                         }
                     } catch (e) {
-                        console.error("Error loading dictionary from storage", e);
+                        console.warn("Storage check:", e);
+                    }
+
+                    // 2. Auto-fetch dictionary.json from repo
+                    this.isAutoLoading = true;
+                    try {
+                        const res = await fetch('./dictionary.json');
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (Array.isArray(data) && data.length > 0) {
+                                this.fullDictionary = data;
+                                await localforage.setItem('falaBrasil_dictionary', data);
+                                this.dictionaryLoaded = true;
+                                this.startStage(1);
+                                this.showToast('تم تحميل 10,000 كلمة بنجاح! 🇧🇷', 'success');
+                                return;
+                            }
+                        }
+                    } catch (err) {
+                        console.warn("Fetch dictionary.json:", err);
+                    } finally {
+                        this.isAutoLoading = false;
                     }
                 },
 
-                // معالج رفع ملف الإكسل وقراءته في المتصفح برمجياً
-                async handleFileUpload(event) {
-                    const file = event.target.files[0];
-                    if (!file) return;
-
-                    this.isParsing = true;
-                    
-                    const reader = new FileReader();
-                    reader.onload = async (e) => {
-                        try {
-                            const data = new Uint8Array(e.target.result);
-                            const workbook = XLSX.read(data, { type: 'array' });
-                            
-                            // البحث عن الشيت الذي يحتوي على الكلمات (غالباً اسمه القاموس الشامل)
-                            let sheetName = workbook.SheetNames.find(name => name.includes('القاموس')) || workbook.SheetNames[1];
-                            const worksheet = workbook.Sheets[sheetName];
-                            
-                            const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                            const parsedDict = [];
-                            
-                            // تجاهل الصف الأول (عناوين الأعمدة) والبدء من الصف الثاني
-                            for (let i = 1; i < json.length; i++) {
-                                const row = json[i];
-                                if (row && row.length >= 5 && row[0]) {
-                                    parsedDict.push({
-                                        id: row[0],
-                                        word: row[1] || '',
-                                        phonetic: row[2] || '',
-                                        pos: row[3] || '',
-                                        translation: row[4] || '',
-                                        level: row[5] || 'A1',
-                                        example: row[6] || '',
-                                        exampleTr: row[7] || ''
-                                    });
-                                }
-                            }
-                            
-                            if (parsedDict.length > 100) {
-                                this.fullDictionary = parsedDict;
-                                // حفظ الكلمات في المتصفح لاستخدامها بدون إنترنت لاحقاً
-                                await localforage.setItem('falaBrasil_dictionary', parsedDict);
-                                this.dictionaryLoaded = true;
-                                this.startStage(1);
-                            } else {
-                                alert("لم يتم العثور على الكلمات. تأكد من أنك رفعت الملف الصحيح (Brazilian_Portuguese_10000_Complete_Dictionary.xlsx).");
-                            }
-                        } catch (err) {
-                            console.error(err);
-                            alert("حدث خطأ أثناء قراءة الملف! يرجى المحاولة مرة أخرى.");
-                        } finally {
-                            this.isParsing = false;
-                        }
-                    };
-                    reader.readAsArrayBuffer(file);
+                loadSampleDictionary() {
+                    this.fullDictionary = this.rawDictionary;
+                    this.dictionaryLoaded = true;
+                    this.startStage(1);
+                    this.showToast('تم تفعيل الكلمات الأساسية مؤقتاً', 'warn');
                 },
 
-                // وظائف حفظ التقدم
+                // STREAK & PROGRESS MANAGEMENT
                 loadProgress() {
                     const xp = localStorage.getItem('fb_xp');
                     if (xp) this.xp = parseInt(xp);
@@ -867,22 +1212,329 @@
 
                     const learned = localStorage.getItem('fb_learned');
                     if (learned) this.learnedWords = JSON.parse(learned);
+
+                    const favorites = localStorage.getItem('fb_favorites');
+                    if (favorites) this.favoriteWords = JSON.parse(favorites);
+
+                    const difficult = localStorage.getItem('fb_difficult');
+                    if (difficult) this.difficultWords = JSON.parse(difficult);
                 },
 
                 saveProgress() {
                     localStorage.setItem('fb_xp', this.xp.toString());
                     localStorage.setItem('fb_streak', this.streak.toString());
                     localStorage.setItem('fb_learned', JSON.stringify(this.learnedWords));
+                    localStorage.setItem('fb_favorites', JSON.stringify(this.favoriteWords));
+                    localStorage.setItem('fb_difficult', JSON.stringify(this.difficultWords));
                 },
 
+                checkStreak() {
+                    const today = new Date().toISOString().split('T')[0];
+                    const lastDate = localStorage.getItem('fb_last_study_date');
+
+                    if (!lastDate) {
+                        this.streak = 1;
+                    } else if (lastDate === today) {
+                        // already maintained today
+                    } else {
+                        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+                        if (lastDate === yesterday) {
+                            // yesterday was active, increment streak on first activity
+                        } else {
+                            // broken streak
+                            this.streak = 1;
+                        }
+                    }
+                    localStorage.setItem('fb_last_study_date', today);
+                    this.saveProgress();
+                },
+
+                recordActivity() {
+                    const today = new Date().toISOString().split('T')[0];
+                    const lastDate = localStorage.getItem('fb_last_study_date');
+                    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+                    if (lastDate === yesterday) {
+                        this.streak += 1;
+                    }
+                    localStorage.setItem('fb_last_study_date', today);
+                    this.saveProgress();
+                },
+
+                // USER RANK COMPUTED
+                get userRank() {
+                    if (this.xp < 200) return { title: 'مبتدئ مطلق', badge: '🥉', level: 1, prevXp: 0, nextXp: 200 };
+                    if (this.xp < 600) return { title: 'مستكشف برازيلي', badge: '🥈', level: 2, prevXp: 200, nextXp: 600 };
+                    if (this.xp < 1500) return { title: 'متعلم نشط', badge: '🥇', level: 3, prevXp: 600, nextXp: 1500 };
+                    if (this.xp < 3500) return { title: 'متحدث طليق', badge: '💎', level: 4, prevXp: 1500, nextXp: 3500 };
+                    if (this.xp < 7000) return { title: 'خبير اللغة', badge: '👑', level: 5, prevXp: 3500, nextXp: 7000 };
+                    return { title: 'سفير السامبا', badge: '🇧🇷', level: 6, prevXp: 7000, nextXp: 10000 };
+                },
+
+                get rankProgressPercent() {
+                    const r = this.userRank;
+                    const diff = r.nextXp - r.prevXp;
+                    const cur = this.xp - r.prevXp;
+                    return Math.min(100, Math.max(0, Math.round((cur / diff) * 100)));
+                },
+
+                // TOAST
+                showToast(msg, type = 'success') {
+                    this.toast.message = msg;
+                    this.toast.type = type;
+                    this.toast.icon = type === 'success' ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-solid fa-triangle-exclamation"></i>';
+                    this.toast.show = true;
+                    setTimeout(() => { this.toast.show = false; }, 3000);
+                },
+
+                // DYNAMIC STAGE PROGRESS
+                getStageWords(stageCode) {
+                    if (stageCode === 'C1/C2') {
+                        return this.fullDictionary.filter(item => item.level === 'C1/C2' || item.level === 'C1' || item.level === 'C2');
+                    }
+                    return this.fullDictionary.filter(item => item.level === stageCode);
+                },
+
+                getStageTotalCount(stageCode) {
+                    const count = this.getStageWords(stageCode).length;
+                    return count || (stageCode === 'A1' ? 1000 : (stageCode === 'A2' ? 1500 : 2500));
+                },
+
+                getStageLearnedCount(stageCode) {
+                    const words = this.getStageWords(stageCode);
+                    if (!words.length) return 0;
+                    return words.filter(w => this.learnedWords.includes(w.id)).length;
+                },
+
+                getStageProgress(stageCode) {
+                    const total = this.getStageTotalCount(stageCode);
+                    if (!total) return 0;
+                    const learned = this.getStageLearnedCount(stageCode);
+                    return Math.min(100, Math.round((learned / total) * 100));
+                },
+
+                startStage(level) {
+                    this.currentStage = level;
+                    const stage = this.stagesList.find(s => s.level === level);
+                    this.currentStageCode = stage ? stage.code : 'A1';
+                    this.currentCardIndex = 0;
+                    this.isFlipped = false;
+                    this.deckFilter = 'all';
+                    this.activeTab = 'flashcards';
+                },
+
+                // FLASHCARDS ENGINE
+                get currentDeck() {
+                    let deck = [];
+                    if (this.currentStageCode === 'ALL') {
+                        deck = this.fullDictionary;
+                    } else {
+                        deck = this.getStageWords(this.currentStageCode);
+                    }
+
+                    if (this.deckFilter === 'unlearned') {
+                        deck = deck.filter(w => !this.learnedWords.includes(w.id));
+                    } else if (this.deckFilter === 'difficult') {
+                        deck = deck.filter(w => this.difficultWords.includes(w.id));
+                    } else if (this.deckFilter === 'favorites') {
+                        deck = deck.filter(w => this.favoriteWords.includes(w.id));
+                    }
+
+                    return deck;
+                },
+
+                get currentCard() {
+                    if (!this.currentDeck.length) return null;
+                    if (this.currentCardIndex >= this.currentDeck.length) {
+                        this.currentCardIndex = 0;
+                    }
+                    return this.currentDeck[this.currentCardIndex];
+                },
+
+                nextCard() {
+                    if (this.currentCardIndex < this.currentDeck.length - 1) {
+                        this.currentCardIndex++;
+                        this.isFlipped = false;
+                    } else {
+                        this.currentCardIndex = 0;
+                        this.isFlipped = false;
+                        this.showToast('أكملت دورة البطاقات الحالية! 🎉', 'success');
+                    }
+                },
+
+                prevCard() {
+                    if (this.currentCardIndex > 0) {
+                        this.currentCardIndex--;
+                        this.isFlipped = false;
+                    }
+                },
+
+                shuffleDeck() {
+                    this.currentDeck.sort(() => Math.random() - 0.5);
+                    this.currentCardIndex = 0;
+                    this.isFlipped = false;
+                    this.showToast('تم خلط البطاقات عشوائياً 🔀', 'success');
+                },
+
+                markCard(status) {
+                    if (!this.currentCard) return;
+                    const id = this.currentCard.id;
+                    this.recordActivity();
+
+                    if (status === 'easy') {
+                        this.xp += 15;
+                        if (!this.learnedWords.includes(id)) {
+                            this.learnedWords.push(id);
+                        }
+                        // Remove from difficult if previously added
+                        this.difficultWords = this.difficultWords.filter(item => item !== id);
+                        this.showToast('+15 XP • أتقنت الكلمة بنجاح! ✓', 'success');
+                    } else if (status === 'good') {
+                        this.xp += 5;
+                    } else if (status === 'hard') {
+                        this.xp += 2;
+                        if (!this.difficultWords.includes(id)) {
+                            this.difficultWords.push(id);
+                        }
+                        this.showToast('تمت الإضافة للمراجعة الصعبة ⚠️', 'warn');
+                    }
+
+                    this.saveProgress();
+                    this.nextCard();
+                },
+
+                toggleFavorite(id) {
+                    if (this.favoriteWords.includes(id)) {
+                        this.favoriteWords = this.favoriteWords.filter(item => item !== id);
+                        this.showToast('تمت الإزالة من المفضلة', 'warn');
+                    } else {
+                        this.favoriteWords.push(id);
+                        this.showToast('تمت الإضافة للمفضلة ⭐', 'success');
+                    }
+                    this.saveProgress();
+                },
+
+                toggleLearned(id) {
+                    this.recordActivity();
+                    if (this.learnedWords.includes(id)) {
+                        this.learnedWords = this.learnedWords.filter(item => item !== id);
+                        this.showToast('تم إلغاء تحديد الإتقان', 'warn');
+                    } else {
+                        this.learnedWords.push(id);
+                        this.xp += 10;
+                        this.difficultWords = this.difficultWords.filter(item => item !== id);
+                        this.showToast('+10 XP • تم حفظ الكلمة! ✓', 'success');
+                    }
+                    this.saveProgress();
+                },
+
+                // QUIZ ENGINE
+                get quizDeck() {
+                    if (this.quizLevel === 'ALL') return this.fullDictionary;
+                    return this.getStageWords(this.quizLevel);
+                },
+
+                get currentQuizQuestion() {
+                    const deck = this.quizDeck;
+                    if (!deck || deck.length === 0) return null;
+                    const correct = deck[(this.quizQuestionIndex * 7 + 3) % deck.length];
+                    const options = [correct.translation];
+
+                    while (options.length < 4) {
+                        const randItem = this.fullDictionary[Math.floor(Math.random() * this.fullDictionary.length)];
+                        if (randItem && randItem.translation && !options.includes(randItem.translation)) {
+                            options.push(randItem.translation);
+                        }
+                    }
+                    options.sort(() => Math.random() - 0.5);
+
+                    return {
+                        id: correct.id,
+                        word: correct.word,
+                        phonetic: correct.phonetic,
+                        correct: correct.translation,
+                        options: options
+                    };
+                },
+
+                selectQuizOption(option) {
+                    if (this.quizAnswered) return;
+                    this.selectedOption = option;
+                    this.quizAnswered = true;
+                    this.recordActivity();
+
+                    const isCorrect = option === this.currentQuizQuestion.correct;
+                    if (isCorrect) {
+                        this.quizScore += 15;
+                        this.xp += 15;
+                        this.quizCorrectCount += 1;
+                        if (!this.learnedWords.includes(this.currentQuizQuestion.id)) {
+                            this.learnedWords.push(this.currentQuizQuestion.id);
+                        }
+                        this.difficultWords = this.difficultWords.filter(id => id !== this.currentQuizQuestion.id);
+                    } else {
+                        if (!this.difficultWords.includes(this.currentQuizQuestion.id)) {
+                            this.difficultWords.push(this.currentQuizQuestion.id);
+                        }
+                    }
+                    this.saveProgress();
+                },
+
+                nextQuizQuestion() {
+                    if (this.quizQuestionIndex >= 9) {
+                        this.quizCompleted = true;
+                        if (this.quizCorrectCount >= 8) {
+                            this.xp += 50; // Bonus for high accuracy
+                            this.showToast('مكافأة إتقان +50 XP! 🏆', 'success');
+                            this.saveProgress();
+                        }
+                    } else {
+                        this.quizQuestionIndex++;
+                        this.quizAnswered = false;
+                        this.selectedOption = null;
+                    }
+                },
+
+                resetQuiz() {
+                    this.quizQuestionIndex = 0;
+                    this.quizScore = 0;
+                    this.quizCorrectCount = 0;
+                    this.quizAnswered = false;
+                    this.quizCompleted = false;
+                    this.selectedOption = null;
+                },
+
+                // DICTIONARY FILTERING
                 get filteredDictionary() {
                     return this.fullDictionary.filter(item => {
-                        const matchesSearch = !this.searchQuery ||
-                            item.word.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                            item.translation.includes(this.searchQuery) ||
-                            item.phonetic.includes(this.searchQuery);
-                        const matchesLevel = this.selectedLevel === 'ALL' || item.level === this.selectedLevel;
-                        return matchesSearch && matchesLevel;
+                        const q = this.searchQuery.toLowerCase().trim();
+                        const matchesSearch = !q ||
+                            (item.word && item.word.toLowerCase().includes(q)) ||
+                            (item.translation && item.translation.includes(q)) ||
+                            (item.phonetic && item.phonetic.includes(q)) ||
+                            (item.example && item.example.toLowerCase().includes(q));
+
+                        let matchesLevel = true;
+                        if (this.selectedLevel !== 'ALL') {
+                            if (this.selectedLevel === 'C1/C2') {
+                                matchesLevel = item.level === 'C1/C2' || item.level === 'C1' || item.level === 'C2';
+                            } else {
+                                matchesLevel = item.level === this.selectedLevel;
+                            }
+                        }
+
+                        let matchesStatus = true;
+                        if (this.statusFilter === 'learned') {
+                            matchesStatus = this.learnedWords.includes(item.id);
+                        } else if (this.statusFilter === 'unlearned') {
+                            matchesStatus = !this.learnedWords.includes(item.id);
+                        } else if (this.statusFilter === 'favorites') {
+                            matchesStatus = this.favoriteWords.includes(item.id);
+                        } else if (this.statusFilter === 'difficult') {
+                            matchesStatus = this.difficultWords.includes(item.id);
+                        }
+
+                        return matchesSearch && matchesLevel && matchesStatus;
                     });
                 },
 
@@ -895,93 +1547,67 @@
                     return Math.ceil(this.filteredDictionary.length / this.pageSize) || 1;
                 },
 
-                get currentDeck() {
-                    return this.fullDictionary.filter(item => item.level === this.currentStageCode).slice(0, 50);
+                // VERBS FILTERING
+                get filteredVerbs() {
+                    if (this.verbFilter === 'ALL') return this.verbList;
+                    return this.verbList.filter(v => v.type.includes(this.verbFilter));
                 },
 
-                get currentCard() {
-                    return this.currentDeck[this.currentCardIndex] || this.currentDeck[0];
-                },
-
-                get currentQuizQuestion() {
-                    const deck = this.currentDeck;
-                    if (!deck || deck.length === 0) return null;
-                    const correct = deck[this.quizQuestionIndex % deck.length];
-                    const options = [correct.translation];
-
-                    while (options.length < 4) {
-                        const randItem = this.fullDictionary[Math.floor(Math.random() * this.fullDictionary.length)];
-                        if (!options.includes(randItem.translation)) {
-                            options.push(randItem.translation);
-                        }
-                    }
-                    // Shuffle options
-                    options.sort(() => Math.random() - 0.5);
-
-                    return {
-                        word: correct.word,
-                        phonetic: correct.phonetic,
-                        correct: correct.translation,
-                        options: options
+                // DATA BACKUP & RESTORE
+                exportProgress() {
+                    const data = {
+                        xp: this.xp,
+                        streak: this.streak,
+                        learnedWords: this.learnedWords,
+                        favoriteWords: this.favoriteWords,
+                        difficultWords: this.difficultWords,
+                        exportDate: new Date().toISOString()
                     };
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `falabrasil_backup_${new Date().toISOString().split('T')[0]}.json`;
+                    a.click();
+                    this.showToast('تم تصدير نسخة تقدمك بنجاح 💾', 'success');
                 },
 
-                startStage(level) {
-                    this.currentStage = level;
-                    const stage = this.stagesList.find(s => s.level === level);
-                    this.currentStageCode = stage ? stage.code : 'A1';
-                    this.currentCardIndex = 0;
-                    this.isFlipped = false;
-                    this.activeTab = 'flashcards';
-                },
-
-                getStageProgress(level) {
-                    if (level === 1) return 25;
-                    if (level === 2) return 10;
-                    return 0;
-                },
-
-                nextCard() {
-                    if (this.currentCardIndex < this.currentDeck.length - 1) {
-                        this.currentCardIndex++;
-                        this.isFlipped = false;
-                    }
-                },
-
-                prevCard() {
-                    if (this.currentCardIndex > 0) {
-                        this.currentCardIndex--;
-                        this.isFlipped = false;
-                    }
-                },
-
-                markCard(status) {
-                    if (status === 'easy') {
-                        this.xp += 10;
-                        if (!this.learnedWords.includes(this.currentCard.id)) {
-                            this.learnedWords.push(this.currentCard.id);
+                importProgress(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            if (data.xp !== undefined) this.xp = parseInt(data.xp);
+                            if (data.streak !== undefined) this.streak = parseInt(data.streak);
+                            if (Array.isArray(data.learnedWords)) this.learnedWords = data.learnedWords;
+                            if (Array.isArray(data.favoriteWords)) this.favoriteWords = data.favoriteWords;
+                            if (Array.isArray(data.difficultWords)) this.difficultWords = data.difficultWords;
+                            this.saveProgress();
+                            this.showToast('تم استعادة التقدم بنجاح! 🚀', 'success');
+                            this.showProfileModal = false;
+                        } catch (err) {
+                            alert('الملف غير صالح أو تالف.');
                         }
+                    };
+                    reader.readAsText(file);
+                },
+
+                resetProgressConfirm() {
+                    if (confirm('هل أنت متأكد من رغبتك في إعادة ضبط كافة نقاطك والكلمات المحفوظة؟ لن يمكن التراجع.')) {
+                        this.xp = 0;
+                        this.streak = 1;
+                        this.learnedWords = [];
+                        this.favoriteWords = [];
+                        this.difficultWords = [];
+                        this.saveProgress();
+                        this.showToast('تمت إعادة ضبط التقدم بالكامل', 'warn');
+                        this.showProfileModal = false;
                     }
-                    this.saveProgress(); // حفظ التقدم بعد كل بطاقة
-                    this.nextCard();
                 },
 
-                selectQuizOption(option) {
-                    this.selectedOption = option;
-                    this.quizAnswered = true;
-                    if (option === this.currentQuizQuestion.correct) {
-                        this.quizScore += 15;
-                        this.xp += 15;
-                    }
-                    this.saveProgress(); // حفظ التقدم بعد كل إجابة
-                },
-
-                nextQuizQuestion() {
-                    this.quizQuestionIndex++;
-                    this.quizAnswered = false;
-                    this.selectedOption = null;
-                },
-
+                // PRONUNCIATION
                 speak(text) {
                     if ('speechSynthesis' in window) {
                         window.speechSynthesis.cancel();
@@ -992,6 +1618,90 @@
                     }
                 },
 
+                // FILE UPLOAD (EXCEL OR JSON)
+                async handleFileUpload(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    this.isParsing = true;
+                    try {
+                        if (file.name.endsWith('.json')) {
+                            const text = await file.text();
+                            const data = JSON.parse(text);
+                            if (Array.isArray(data) && data.length > 0) {
+                                this.fullDictionary = data;
+                                await localforage.setItem('falaBrasil_dictionary', data);
+                                this.dictionaryLoaded = true;
+                                this.startStage(1);
+                                this.isParsing = false;
+                                this.showToast('تم تحميل القاموس بنجاح! ✓', 'success');
+                                return;
+                            }
+                        }
+
+                        const reader = new FileReader();
+                        reader.onload = async (e) => {
+                            try {
+                                const data = new Uint8Array(e.target.result);
+                                const workbook = XLSX.read(data, { type: 'array' });
+                                let sheetName = workbook.SheetNames.find(name => name.includes('القاموس')) || workbook.SheetNames[1];
+                                const worksheet = workbook.Sheets[sheetName];
+                                const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                                const parsedDict = [];
+
+                                for (let i = 1; i < json.length; i++) {
+                                    const row = json[i];
+                                    if (row && row.length >= 5 && row[0]) {
+                                        parsedDict.push({
+                                            id: row[0],
+                                            word: row[1] || '',
+                                            phonetic: row[2] || '',
+                                            pos: row[3] || '',
+                                            translation: row[4] || '',
+                                            level: row[5] || 'A1',
+                                            example: row[6] || '',
+                                            exampleTr: row[7] || ''
+                                        });
+                                    }
+                                }
+
+                                if (parsedDict.length > 100) {
+                                    this.fullDictionary = parsedDict;
+                                    await localforage.setItem('falaBrasil_dictionary', parsedDict);
+                                    this.dictionaryLoaded = true;
+                                    this.startStage(1);
+                                    this.showToast('تم تحميل ' + parsedDict.length + ' كلمة بنجاح!', 'success');
+                                } else {
+                                    alert("لم يتم العثور على الكلمات. تأكد من رفع الملف الصحيح.");
+                                }
+                            } catch (err) {
+                                console.error(err);
+                                alert("حدث خطأ أثناء قراءة الملف!");
+                            } finally {
+                                this.isParsing = false;
+                            }
+                        };
+                        reader.readAsArrayBuffer(file);
+                    } catch (err) {
+                        console.error(err);
+                        this.isParsing = false;
+                    }
+                },
+
+                // GEMINI AI CHAT
+                saveApiKey() {
+                    this.userApiKey = (this.apiKeyInput || '').trim();
+                    localStorage.setItem('gemini_api_key', this.userApiKey);
+                    this.showApiKeyModal = false;
+                    this.showToast('تم حفظ مفتاح Gemini API بنجاح 🔑', 'success');
+                },
+
+                clearChat() {
+                    this.chatMessages = [
+                        { role: 'model', text: 'تم مسح السجل! كيف يمكنني مساعدتك في تعلم البرتغالية الآن؟ 🇧🇷' }
+                    ];
+                },
+
                 sendSuggestedPrompt(text) {
                     this.chatInput = text;
                     this.sendChatMessage();
@@ -1000,12 +1710,21 @@
                 async sendChatMessage() {
                     if (!this.chatInput.trim() || this.chatLoading) return;
 
+                    const apiKey = this.userApiKey || localStorage.getItem('gemini_api_key');
+                    if (!apiKey) {
+                        this.chatMessages.push({
+                            role: 'model',
+                            text: '⚠️ لتفعيل المعلم الذكي، يرجى إدخال مفتاح Google Gemini API الخاص بك من زر (إعداد مفتاح API 🔑) بالأعلى. (المفتاح مجاني من aistudio.google.com).'
+                        });
+                        this.showApiKeyModal = true;
+                        return;
+                    }
+
                     const userQuery = this.chatInput;
                     this.chatMessages.push({ role: 'user', text: userQuery });
                     this.chatInput = '';
                     this.chatLoading = true;
 
-                    // Scroll to bottom
                     this.$nextTick(() => {
                         const container = document.getElementById('chatContainer');
                         if (container) container.scrollTop = container.scrollHeight;
@@ -1013,8 +1732,7 @@
 
                     try {
                         const systemPrompt = "أنت معلم لغة برتغالية برازيلية خبير ومحفز. أجب باللغة العربية مع إعطاء أمثلة بالبرتغالية البرازيلية المترجمة، واشرح المفردات والقواعد بأسلوب مبسط واحترافي.";
-                        const apiKey = "";
-                        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+                        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
                         const response = await fetch(apiUrl, {
                             method: 'POST',
@@ -1026,11 +1744,17 @@
                         });
 
                         const data = await response.json();
+                        if (data.error) {
+                            throw new Error(data.error.message || 'API Error');
+                        }
                         const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "عذراً، لم أستطع فهم الطلب بشكل كامل.";
                         this.chatMessages.push({ role: 'model', text: reply });
+                        this.xp += 5; // Reward for learning with AI
+                        this.saveProgress();
 
                     } catch (err) {
-                        this.chatMessages.push({ role: 'model', text: "حدث خطأ في الاتصال بالمعلم الذكي. يرجى المحاولة لاحقاً." });
+                        console.error('Gemini error:', err);
+                        this.chatMessages.push({ role: 'model', text: "حدث خطأ في الاتصال بالمعلم الذكي. تأكد من صحة المفتاح والمحاولة لاحقاً." });
                     } finally {
                         this.chatLoading = false;
                         this.$nextTick(() => {
