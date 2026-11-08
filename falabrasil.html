@@ -224,6 +224,21 @@
                 </button>
             </div>
 
+            <!-- Daily Goal Target Selector -->
+            <div class="bg-emerald-50/50 p-3.5 rounded-2xl border border-emerald-100 flex items-center justify-between text-xs">
+                <div>
+                    <span class="font-bold text-emerald-900 block">هدفك اليومي للحفظ:</span>
+                    <span class="text-slate-500 text-[11px]">حدد عدد الكلمات المطلوب إتقانها يومياً</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <template x-for="g in [5, 10, 20, 30]" :key="g">
+                        <button @click="dailyGoal = g; localStorage.setItem('fb_daily_goal', g.toString()); showToast('تم تحديث الهدف لـ ' + g + ' كلمات يومياً! 🎯', 'success')"
+                                :class="dailyGoal === g ? 'bg-emerald-600 text-white font-bold' : 'bg-white border text-slate-700 hover:bg-slate-50'"
+                                class="px-2.5 py-1 rounded-lg font-inter text-xs transition" x-text="g"></button>
+                    </template>
+                </div>
+            </div>
+
             <!-- Rank Progress Bar -->
             <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
                 <div class="flex justify-between text-xs font-bold text-slate-600">
@@ -284,6 +299,44 @@
                     <i class="fa-solid fa-trash-can ml-1"></i> إعادة ضبط التقدم بالكامل
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- PRONUNCIATION RULES MODAL (دليل أسرار النطق البرازيلي) -->
+    <div x-show="showPronounceModal" style="display: none;" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-xl w-full space-y-6 shadow-2xl border border-slate-100 max-h-[85vh] overflow-y-auto" @click.outside="showPronounceModal = false">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl shadow-inner font-bold">
+                        🇧🇷
+                    </div>
+                    <div>
+                        <h3 class="font-black text-slate-900 text-lg">أسرار وقواعد النطق البرازيلي</h3>
+                        <p class="text-xs text-slate-400">القواعد الذهبية لنطق البرتغالية البرازيلية كالمتحدثين الأصليين</p>
+                    </div>
+                </div>
+                <button @click="showPronounceModal = false" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3.5">
+                <template x-for="rule in pronounceRules" :key="rule.letter">
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-1.5 hover:border-emerald-200 transition">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-bold text-emerald-800 text-sm" x-text="rule.letter"></h4>
+                        </div>
+                        <p class="text-xs text-slate-600 leading-relaxed" x-text="rule.rule"></p>
+                        <div class="text-xs text-slate-500 font-inter font-medium pt-1 border-t border-slate-200/60">
+                            أمثلة: <span class="text-emerald-700 font-bold" x-text="rule.examples"></span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <button @click="showPronounceModal = false" class="w-full py-3 bg-slate-900 hover:bg-emerald-600 text-white font-bold rounded-2xl text-xs transition shadow-sm">
+                فهمت القواعد، العودة للتطبيق
+            </button>
         </div>
     </div>
 
@@ -550,6 +603,25 @@
                     </div>
 
                     <div class="flex items-center gap-2">
+                        <!-- Pronunciation Rules button -->
+                        <button @click="showPronounceModal = true" class="px-2.5 py-1 rounded-lg border border-slate-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 text-xs font-bold transition flex items-center gap-1" title="قواعد النطق البرازيلي">
+                            <i class="fa-solid fa-book-open"></i>
+                            <span class="hidden sm:inline">أسرار النطق</span>
+                        </button>
+
+                        <!-- Autoplay Button -->
+                        <button @click="toggleAutoplay()" class="px-2.5 py-1 rounded-lg border text-xs font-bold transition flex items-center gap-1"
+                                :class="isAutoplaying ? 'bg-amber-500 text-white border-amber-500 animate-pulse' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'"
+                                title="تشغيل تلقائي بدون استخدام اليدين">
+                            <i class="fa-solid" :class="isAutoplaying ? 'fa-pause' : 'fa-play'"></i>
+                            <span x-text="isAutoplaying ? 'إيقاف' : 'تشغيل تلقائي'"></span>
+                        </button>
+
+                        <!-- Speed Selector -->
+                        <button @click="cycleSpeed()" class="px-2 py-1 rounded-lg border border-slate-200 text-xs font-bold font-inter text-slate-700 hover:bg-slate-100" title="سرعة الصوت">
+                            <span x-text="speechRate + 'x'"></span>
+                        </button>
+
                         <button @click="shuffleDeck()" class="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100" title="خلط البطاقات عشوائياً">
                             <i class="fa-solid fa-shuffle"></i>
                         </button>
@@ -1226,6 +1298,14 @@
                 dailyGoal: parseInt(localStorage.getItem('fb_daily_goal') || '10'),
                 todayLearnedCount: 0,
 
+                // Pronunciation Rules
+                showPronounceModal: false,
+                pronounceRules: [{"letter": "حرف R (الراء الحلقية)", "rule": "في أول الكلمة أو عند تكراره (RR)، ينطق هاءً أو خاءً رخوة مميزة للبرازيليين.", "examples": "Rio (هيو), Carro (كاهو), Rua (هوا)"}, {"letter": "حرفا D و T قبل E و I", "rule": "حرف D ينطق 'دجي' وحرف T ينطق 'تشي' عندما يتبعهما حرف I أو E.", "examples": "Dia (دجيا), Cidade (سيدادجي), Noite (نوتشي), Muito (موينتشو)"}, {"letter": "حرف L في نهاية الكلمة", "rule": "حرف L في نهاية الكلمة أو المقطع ينطق دائماً مثل حرف الواو (W / U).", "examples": "Brasil (برازيو), Legal (ليغاو), Papel (بابيل / بابيو)"}, {"letter": "حروف الغنّة وعلامة التلدة (~)", "rule": "رمز (~) فوق الحرف الصوتي يجعله يخرج رناناً من الأنف (صوت أنفي مميز).", "examples": "Pão (باو), Não (ناو), Mãe (ماي)"}, {"letter": "حرف S بين حرفين متحركين", "rule": "عندما يقع حرف S وحيداً بين حرفين صوتيين، يتحول نطقه إلى حرف (Z).", "examples": "Casa (كازا), Mesa (ميزا), Brasil (برازيو)"}, {"letter": "حرف M في نهاية الكلمة", "rule": "لا ينطق ميماً صريحة في آخر الكلمة، بل يعطي الصوت السابق له غنة خفيفة.", "examples": "Bom (بون أنفية), Sim (سين أنفية), Também (تانبين)"}],
+
+                // Autoplay Hands-free
+                isAutoplaying: false,
+                autoplayTimer: null,
+
                 // Dialogues State
                 activeDialogueId: 'airport',
                 dialoguesList: [{"id": "airport", "title": "في المطار (No Aeroporto)", "icon": "fa-plane-arrival", "badge": "السفر والتنقل", "description": "حوار عند الوصول إلى مطار ريو دي جانيرو أو ساو باولو وإنهاء إجراءات الجوازات والجمارك.", "lines": [{"speaker": "ضابط الجوازات", "pt": "Boa tarde! Seu passaporte e formulário de imigração, por favor.", "ar": "مساء الخير! جواز سفرك واستمارة الهجرة من فضلك."}, {"speaker": "المسافر", "pt": "Boa tarde! Aqui estão os documentos.", "ar": "مساء الخير! تفضل، ها هي المستندات."}, {"speaker": "ضابط الجوازات", "pt": "Qual é o motivo da sua viagem ao Brasil?", "ar": "ما هو سبب زيارتك للبرازيل؟"}, {"speaker": "المسافر", "pt": "Vim a turismo por duas semanas. Vou conhecer o Rio de Janeiro.", "ar": "أتيت للسياحة لمدة أسبوعين. سأزور ريو دي جانيرو."}, {"speaker": "ضابط الجوازات", "pt": "Perfeito. Onde você vai ficar hospedado?", "ar": "ممتاز. أين ستقيم؟"}, {"speaker": "المسافر", "pt": "No Hotel Copacabana Palace. Aqui está a reserva.", "ar": "في فندق كوباكابانا بالاس. ها هو حجز الفندق."}, {"speaker": "ضابط الجوازات", "pt": "Tudo certo! Tenha uma excelente estadia no Brasil. Bem-vindo!", "ar": "كل شيء تمام! أتمنى لك إقامة رائعة في البرازيل. أهلاً بك!"}, {"speaker": "المسافر", "pt": "Muito obrigado! Tenha um bom dia.", "ar": "شكراً جزيلاً! أتمنى لك يوماً طيباً."}]}, {"id": "hotel", "title": "حجز الفندق وتسجيل الوصول (No Hotel)", "icon": "fa-hotel", "badge": "الإقامة والخدمات", "description": "حوار في مكتب الاستقبال لتسجيل الوصول والسؤال عن الإفطار وكلمة مرور الواي فاي.", "lines": [{"speaker": "المسافر", "pt": "Olá, boa tarde! Eu tenho uma reserva em nome de Ahmed.", "ar": "مرحباً، مساء الخير! لدي حجز باسم أحمد."}, {"speaker": "موظف الاستقبال", "pt": "Olá! Deixe-me verificar no sistema... Sim, um quarto duplo com vista para o mar.", "ar": "أهلاً بك! دعني أتحقق في النظام... نعم، غرفة مزدوجة مطلة على البحر."}, {"speaker": "المسافر", "pt": "Isso mesmo! O café da manhã está incluído?", "ar": "بالضبط! هل وجبة الإفطار مشمولة؟"}, {"speaker": "موظف الاستقبال", "pt": "Sim, servido diariamente das 6h às 10h no segundo andar.", "ar": "نعم، يُقدّم يومياً من الساعة 6 حتى 10 صباحاً في الطابق الثاني."}, {"speaker": "المسافر", "pt": "Maravilha! Qual é a senha do Wi-Fi?", "ar": "رائع! ما هي كلمة مرور الواي فاي؟"}, {"speaker": "موظف الاستقبال", "pt": "A senha é 'brasil2026'. Aqui está a chave do seu quarto, número 504.", "ar": "كلمة المرور هي 'brasil2026'. تفضل مفتاح غرفتك، رقم 504."}]}, {"id": "restaurant", "title": "في المطعم البرازيلي (No Restaurante)", "icon": "fa-utensils", "badge": "المطاعم والطعام", "description": "طلب أشهر الأطباق البرازيلية (Picanha و Feijoada و Guaraná) وطلب الحساب.", "lines": [{"speaker": "النادلة", "pt": "Boa noite! Mesa para quantas pessoas?", "ar": "مساء الخير! طاولة لكم شخص؟"}, {"speaker": "الزبون", "pt": "Boa noite! Mesa para duas pessoas, por favor.", "ar": "مساء الخير! طاولة لشخصين، من فضلك."}, {"speaker": "النادلة", "pt": "Aqui está o cardápio. O que gostariam de beber para começar?", "ar": "تفضل قائمة الطعام. ماذا تودان أن تشربا في البداية؟"}, {"speaker": "الزبون", "pt": "Um suco de maracujá e um refrigerante Guaraná bem gelado, por favor.", "ar": "عصير باشن فروت ومشروب غوارانا برازيلي مثلج جداً، من فضلك."}, {"speaker": "النادلة", "pt": "E para comer, já escolheram?", "ar": "وبالنسبة للطعام، هل اخترتما بعد؟"}, {"speaker": "الزبون", "pt": "Queremos uma picanha grelhada com arroz, feijão e farofa.", "ar": "نريد بيكانيا مشوية (ستيك برازيلي) مع أرز وفاصولياء وفاروفا."}, {"speaker": "الزبون", "pt": "Estava tudo delicioso! Pode trazer a conta, por favor?", "ar": "كان كل شيء لذيذاً للغاية! هل يمكنك إحضار الحساب من فضلك؟"}, {"speaker": "النادلة", "pt": "Com certeza! Aceitamos cartão ou dinheiro.", "ar": "بكل تأكيد! نقبل البطاقة الائتمانية أو الدفع النقدي."}]}, {"id": "beach", "title": "على شاطئ ريو (Na Praia de Copacabana)", "icon": "fa-umbrella-beach", "badge": "الأنشطة والترفيه", "description": "استئجار كراسي وشمسية، شراء ماء جوز الهند البارد وتجاذب أطراف الحديث.", "lines": [{"speaker": "السائح", "pt": "Olá, amigo! Quanto custa o aluguel de duas cadeiras e um guarda-sol?", "ar": "مرحباً يا صديقي! كم تكلفة استئجار كرسيين ومظلة شمسية؟"}, {"speaker": "بائع الشاطئ", "pt": "Fica 30 reais o dia todo, meu camarada!", "ar": "التكلفة 30 ريال برازيلي طوال اليوم يا صاحبي!"}, {"speaker": "السائح", "pt": "Ótimo! Você também tem água de coco bem gelada?", "ar": "ممتاز! هل لديك أيضاً ماء جوز هند مثلج؟"}, {"speaker": "بائع الشاطئ", "pt": "Tenho sim, acabei de abrir! O mar hoje está uma beleza para nadar.", "ar": "نعم بالطبع، فتحتها للتو! البحر اليوم رائع جداً للسباحة."}, {"speaker": "السائح", "pt": "A praia de Copacabana é realmente fantástica!", "ar": "شاطئ كوباكابانا رائع حقاً وخيالي!"}, {"speaker": "بائع الشاطئ", "pt": "Aproveite bastante o sol e o Rio de Janeiro!", "ar": "استمتع كثيراً بالشمس ومدينة ريو دي جانيرو!"}]}, {"id": "uber", "title": "في التاكسي / أوبر (No Táxi / Uber)", "icon": "fa-car", "badge": "التنقل والمواصلات", "description": "تحديد الوجهة، الحديث عن الازدحام المروري، والوصول للوجهة المطلوبة.", "lines": [{"speaker": "السائق", "pt": "Olá! Bom dia, Ahmed?", "ar": "أهلاً! صباح الخير، كابتن أحمد؟"}, {"speaker": "الراكب", "pt": "Bom dia! Sim, sou eu. Vamos para o Pão de Açúcar, por favor.", "ar": "صباح الخير! نعم، أنا هو. سنذهب إلى جبل جبل السكر (Pão de Açúcar) من فضلك."}, {"speaker": "السائق", "pt": "Perfeito! O trânsito hoje está tranquilo na orla.", "ar": "تمام! حركة المرور اليوم هادئة وسلسة على الكورنيش."}, {"speaker": "الراكب", "pt": "Quanto tempo devemos levar para chegar lá?", "ar": "كم من الوقت سنتستغرق تقريباً للوصول إلى هناك؟"}, {"speaker": "السائق", "pt": "Cerca de vinte minutos. Você é de onde?", "ar": "حوالي عشرين دقيقة. من أين أنت؟"}, {"speaker": "الراكب", "pt": "Sou do mundo árabe! Estou adorando o Brasil e a simpatia das pessoas.", "ar": "أنا من العالم العربي! معجب جداً بالبرازيل وبشاشة وطيبة الناس هنا."}, {"speaker": "السائق", "pt": "Chegamos ao destino! Pode desembarcar pela direita com cuidado.", "ar": "وصلنا إلى وجهتك! يمكنك النزول من الجهة اليمنى بحذر."}, {"speaker": "الراكب", "pt": "Muito obrigado pela corrida! Tenha um ótimo dia.", "ar": "شكراً جزيلاً لك على التوصيلة! أتمنى لك يوماً رائعاً."}]}, {"id": "friends", "title": "التعارف وبناء صداقات (Fazendo Amigos)", "icon": "fa-user-group", "badge": "التواصل الاجتماعي", "description": "محادثة ودية للتعارف وتبادل الاهتمامات وأرقام واتساب.", "lines": [{"speaker": "لوكاس", "pt": "E aí, tudo bem? Você fala português muito bem!", "ar": "أهلاً، كيف حالك؟ أنت تتحدث البرتغالية بشكل جيد جداً!"}, {"speaker": "أحمد", "pt": "Obrigado! Estou estudando há alguns meses pelo FalaBrasil.", "ar": "شكراً لك! أنا أدرس منذ بضعة أشهر عبر منصة FalaBrasil."}, {"speaker": "لوكاس", "pt": "Que massa! O que você mais gosta aqui no Brasil?", "ar": "يا له من شيء رائع! ما أكثر ما تحبه هنا في البرازيل؟"}, {"speaker": "أحمد", "pt": "A música, a natureza e com certeza o futebol!", "ar": "الموسيقى، الطبيعة الخلابة، وبالتأكيد كرة القدم!"}, {"speaker": "لوكاس", "pt": "Você torce para algum time brasileiro?", "ar": "هل تشجع أي فريق برازيلي؟"}, {"speaker": "أحمد", "pt": "Gosto muito do Flamengo e do Santos!", "ar": "أحب كثيراً نادي فلامنغو ونادي سانتوس!"}, {"speaker": "لوكاس", "pt": "Show de bola! Me passa o seu WhatsApp para marcarmos um futebol?", "ar": "إبداع! أعطني رقم واتساب الخاص بك لنرتب للعب كرة القدم سوياً؟"}, {"speaker": "أحمد", "pt": "Com certeza! Anota aí o meu número...", "ar": "بكل تأكيد! سجّل عندك رقمي..."}]}],
@@ -1894,6 +1974,42 @@
                     }
                 },
 
+                cycleSpeed() {
+                    if (this.speechRate === 0.8) this.speechRate = 1.0;
+                    else if (this.speechRate === 1.0) this.speechRate = 1.2;
+                    else this.speechRate = 0.8;
+                    this.showToast('سرعة الصوت: ' + this.speechRate + 'x', 'success');
+                },
+
+                toggleAutoplay() {
+                    this.isAutoplaying = !this.isAutoplaying;
+                    if (this.isAutoplaying) {
+                        this.showToast('بدء التشغيل التلقائي المتواصل 🎧', 'success');
+                        this.runAutoplayStep();
+                    } else {
+                        clearTimeout(this.autoplayTimer);
+                        this.showToast('تم إيقاف التشغيل التلقائي', 'warn');
+                    }
+                },
+
+                runAutoplayStep() {
+                    if (!this.isAutoplaying || !this.currentCard) return;
+                    this.isFlipped = false;
+                    this.speak(this.currentCard.word);
+
+                    this.autoplayTimer = setTimeout(() => {
+                        if (!this.isAutoplaying) return;
+                        this.isFlipped = true;
+                        this.speak(this.currentCard.translation + '. ' + this.currentCard.example);
+
+                        this.autoplayTimer = setTimeout(() => {
+                            if (!this.isAutoplaying) return;
+                            this.nextCard();
+                            this.runAutoplayStep();
+                        }, 4000);
+                    }, 2500);
+                },
+
                 exportAnki() {
                     const list = this.learnedWords.length > 0 ?
                         this.fullDictionary.filter(w => this.learnedWords.includes(w.id)) :
@@ -2068,6 +2184,14 @@
                     }
                 }
             }
+        }
+    </script>
+    <!-- Service Worker Registration for PWA Offline -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW reg error:', err));
+            });
         }
     </script>
 </body>
