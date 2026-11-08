@@ -91,10 +91,64 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #64748b;
         }
+
+        /* Comprehensive Dark Mode Styles */
+        body.dark {
+            background-color: #020617 !important;
+            color: #f1f5f9 !important;
+        }
+        body.dark .bg-white {
+            background-color: #0f172a !important;
+            color: #f1f5f9 !important;
+            border-color: #1e293b !important;
+        }
+        body.dark .bg-slate-50 {
+            background-color: #1e293b !important;
+            color: #e2e8f0 !important;
+            border-color: #334155 !important;
+        }
+        body.dark .bg-slate-100 {
+            background-color: #334155 !important;
+            color: #f8fafc !important;
+            border-color: #475569 !important;
+        }
+        body.dark .border-slate-200, body.dark .border-slate-100 {
+            border-color: #1e293b !important;
+        }
+        body.dark .text-slate-900, body.dark .text-slate-800, body.dark .text-slate-700 {
+            color: #f8fafc !important;
+        }
+        body.dark .text-slate-600, body.dark .text-slate-500 {
+            color: #94a3b8 !important;
+        }
+        body.dark .text-slate-400 {
+            color: #64748b !important;
+        }
+        body.dark header {
+            background-color: #0f172a !important;
+            border-color: #1e293b !important;
+        }
+        body.dark footer {
+            background-color: #0f172a !important;
+            border-color: #1e293b !important;
+        }
+        body.dark input, body.dark select {
+            background-color: #1e293b !important;
+            color: #f8fafc !important;
+            border-color: #334155 !important;
+        }
+        body.dark table thead {
+            background-color: #1e293b !important;
+            border-color: #334155 !important;
+        }
+        body.dark table tbody tr:hover {
+            background-color: #1e293b80 !important;
+        }
+
     </style>
 </head>
 
-<body x-data="portugueseApp()" x-init="initApp()" @keydown.window="handleKeydown($event)" class="min-h-screen flex flex-col bg-slate-50 text-slate-800 antialiased selection:bg-emerald-500 selection:text-white">
+<body x-data="portugueseApp()" x-init="initApp()" @keydown.window="handleKeydown($event)" :class="isDark ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-800'" class="min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white transition-colors duration-200">
 
     <!-- TOAST NOTIFICATION -->
     <div x-show="toast.show" x-transition.opacity.duration.300ms style="display: none;"
@@ -283,6 +337,24 @@
                         </div>
                         <p class="text-xs text-slate-500">منصة تعلّم البرتغالية البرازيلية الشاملة</p>
                     </div>
+                </div>
+
+                <!-- Daily Goal Indicator & Dark Mode Toggle -->
+                <div class="hidden lg:flex items-center gap-3">
+                    <!-- Daily Goal Pill -->
+                    <div @click="showProfileModal = true" class="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-2xl border text-xs font-bold transition shadow-sm"
+                         :class="isDark ? 'bg-slate-900 border-slate-800 text-slate-200 hover:bg-slate-800' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'" title="هدفك اليومي لتعلم الكلمات">
+                        <i class="fa-solid fa-bullseye text-emerald-500"></i>
+                        <span>هدف اليوم:</span>
+                        <span class="font-inter text-emerald-600" x-text="todayLearnedCount + ' / ' + dailyGoal"></span>
+                    </div>
+
+                    <!-- Dark Mode Toggle Button -->
+                    <button @click="toggleDarkMode()" class="w-9 h-9 rounded-xl border flex items-center justify-center transition text-sm"
+                            :class="isDark ? 'bg-slate-900 border-slate-800 text-amber-400 hover:bg-slate-800' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'"
+                            :title="isDark ? 'تفعيل الوضع النهاري' : 'تفعيل الوضع الليلي'">
+                        <i class="fa-solid" :class="isDark ? 'fa-sun' : 'fa-moon'"></i>
+                    </button>
                 </div>
 
                 <!-- Stats Bar (Gamification & Interactive Profile Trigger) -->
@@ -622,8 +694,20 @@
                         </h2>
                     </div>
 
-                    <div class="flex items-center gap-2">
-                        <select x-model="quizLevel" @change="resetQuiz()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <!-- Mode Selector (Reading vs Audio Listening) -->
+                        <div class="flex items-center bg-slate-100 p-0.5 rounded-xl text-xs font-bold" :class="isDark ? 'bg-slate-800' : ''">
+                            <button @click="quizMode = 'reading'; resetQuiz()" class="px-2.5 py-1 rounded-lg transition"
+                                    :class="quizMode === 'reading' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500'">
+                                📝 قراءة
+                            </button>
+                            <button @click="quizMode = 'listening'; resetQuiz()" class="px-2.5 py-1 rounded-lg transition"
+                                    :class="quizMode === 'listening' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500'">
+                                🎧 استماع
+                            </button>
+                        </div>
+
+                        <select x-model="quizLevel" @change="resetQuiz()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700" :class="isDark ? 'bg-slate-800 border-slate-700 text-slate-200' : ''">
                             <option value="ALL">جميع المستويات</option>
                             <option value="A1">مستوى A1</option>
                             <option value="A2">مستوى A2</option>
@@ -631,7 +715,7 @@
                             <option value="B2">مستوى B2</option>
                             <option value="C1/C2">مستوى C1/C2</option>
                         </select>
-                        <div class="bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-xl text-sm font-inter">
+                        <div class="bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-xl text-sm font-inter" :class="isDark ? 'bg-emerald-950 text-emerald-400' : ''">
                             +<span x-text="quizScore"></span> XP
                         </div>
                     </div>
@@ -645,15 +729,34 @@
                             <div class="bg-emerald-500 h-full rounded-full transition-all duration-300" :style="`width: ${((quizQuestionIndex) / 10) * 100}%`"></div>
                         </div>
 
-                        <div class="bg-slate-50 rounded-2xl p-6 text-center space-y-2 border border-slate-100">
-                            <span class="text-xs text-slate-400 font-medium">ما هو المعنى الصحيح للكلمة البرتغالية؟</span>
-                            <div class="flex items-center justify-center gap-3">
-                                <h3 class="text-3xl font-extrabold text-slate-900 font-inter" x-text="currentQuizQuestion.word"></h3>
-                                <button @click="speak(currentQuizQuestion.word)" class="text-emerald-600 hover:text-emerald-700 text-xl transition" title="استمع للكلمة">
-                                    <i class="fa-solid fa-volume-high"></i>
+                        <div class="rounded-2xl p-6 text-center space-y-3 border transition"
+                             :class="isDark ? 'bg-slate-800/60 border-slate-700' : 'bg-slate-50 border-slate-100'">
+                            <!-- Standard Reading Mode -->
+                            <div x-show="quizMode === 'reading'" class="space-y-2">
+                                <span class="text-xs text-slate-400 font-medium">ما هو المعنى الصحيح للكلمة البرتغالية؟</span>
+                                <div class="flex items-center justify-center gap-3">
+                                    <h3 class="text-3xl font-extrabold font-inter" :class="isDark ? 'text-white' : 'text-slate-900'" x-text="currentQuizQuestion.word"></h3>
+                                    <button @click="speak(currentQuizQuestion.word)" class="text-emerald-500 hover:text-emerald-600 text-xl transition" title="استمع للكلمة">
+                                        <i class="fa-solid fa-volume-high"></i>
+                                    </button>
+                                </div>
+                                <p class="text-xs text-slate-400">[ <span x-text="currentQuizQuestion.phonetic" class="text-emerald-600 font-semibold"></span> ]</p>
+                            </div>
+
+                            <!-- Audio Listening Mode -->
+                            <div x-show="quizMode === 'listening'" class="space-y-3 py-2">
+                                <span class="text-xs text-emerald-600 font-bold">🎧 استمع للصوت واختر المعنى الصحيح:</span>
+                                <div>
+                                    <button @click="speak(currentQuizQuestion.word)" class="px-6 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold shadow-lg shadow-emerald-600/30 flex items-center gap-3 mx-auto transition transform active:scale-95 text-base">
+                                        <i class="fa-solid fa-volume-high text-xl animate-bounce"></i>
+                                        <span>اضغط للاستماع للكلمة</span>
+                                    </button>
+                                </div>
+                                <button x-show="!quizAnswered" @click="revealListeningWord = true" class="text-[11px] text-slate-400 hover:underline">
+                                    <span x-show="!revealListeningWord">تعذر عليك التمييز؟ اضغط لكشف الكلمة</span>
+                                    <span x-show="revealListeningWord" class="font-bold text-slate-700 font-inter text-sm" :class="isDark ? 'text-slate-300' : ''" x-text="currentQuizQuestion.word + ' [' + currentQuizQuestion.phonetic + ']'"></span>
                                 </button>
                             </div>
-                            <p class="text-xs text-slate-400">[ <span x-text="currentQuizQuestion.phonetic" class="text-emerald-700 font-semibold"></span> ]</p>
                         </div>
 
                         <!-- Options Grid -->
@@ -854,6 +957,79 @@
             </div>
         </section>
 
+        
+        <!-- TAB 5: REAL-WORLD DIALOGUES (المحادثات والمواقف اليومية) -->
+        <section x-show="activeTab === 'dialogues'" class="space-y-6 max-w-5xl mx-auto">
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-teal-700 to-emerald-800 text-white p-6 sm:p-8 shadow-xl">
+                <div class="relative z-10 max-w-2xl">
+                    <span class="inline-block bg-white/20 backdrop-blur-md text-emerald-100 text-xs px-3 py-1 rounded-full font-semibold mb-2">
+                        🇧🇷 محادثات واقعية حية من الشارع البرازيلي
+                    </span>
+                    <h2 class="text-2xl sm:text-3xl font-black mb-2">Diálogos do Dia a Dia 🗣️</h2>
+                    <p class="text-emerald-100 text-sm leading-relaxed">
+                        تدرّب على المحادثات اليومية في المطار، الفندق، المطعم، والشاطئ مع استماع صوتي فوري لكل جملة باللكنة البرازيلية الطبيعية!
+                    </p>
+                </div>
+            </div>
+
+            <!-- Scenarios Accordion Grid -->
+            <div class="grid grid-cols-1 gap-6">
+                <template x-for="dialogue in dialoguesList" :key="dialogue.id">
+                    <div class="rounded-3xl border shadow-sm transition overflow-hidden"
+                         :class="isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'">
+                        <!-- Header -->
+                        <div class="p-6 cursor-pointer flex flex-wrap items-center justify-between gap-4 select-none hover:bg-slate-50/50"
+                             :class="isDark ? 'hover:bg-slate-800/50' : ''"
+                             @click="activeDialogueId = (activeDialogueId === dialogue.id ? null : dialogue.id)">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl shadow-inner shrink-0"
+                                     :class="isDark ? 'bg-emerald-950 text-emerald-400' : ''">
+                                    <i :class="'fa-solid ' + dialogue.icon"></i>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <h3 class="text-lg font-bold text-slate-900" :class="isDark ? 'text-white' : ''" x-text="dialogue.title"></h3>
+                                        <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800"
+                                              :class="isDark ? 'bg-emerald-950 text-emerald-400' : ''" x-text="dialogue.badge"></span>
+                                    </div>
+                                    <p class="text-xs text-slate-500" :class="isDark ? 'text-slate-400' : ''" x-text="dialogue.description"></p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <button @click.stop="playFullDialogue(dialogue)" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition">
+                                    <i class="fa-solid fa-play text-[10px]"></i>
+                                    <span>تشغيل كامل</span>
+                                </button>
+                                <i class="fa-solid text-slate-400 transition-transform duration-300"
+                                   :class="activeDialogueId === dialogue.id ? 'fa-chevron-up text-emerald-600' : 'fa-chevron-down'"></i>
+                            </div>
+                        </div>
+
+                        <!-- Dialogue Conversation Lines -->
+                        <div x-show="activeDialogueId === dialogue.id" x-collapse class="border-t p-6 space-y-4"
+                             :class="isDark ? 'border-slate-800 bg-slate-950/40' : 'border-slate-100 bg-slate-50/50'">
+                            <template x-for="(line, idx) in dialogue.lines" :key="idx">
+                                <div class="flex items-start gap-3 p-3.5 rounded-2xl border transition"
+                                     :class="idx % 2 === 0 ? (isDark ? 'bg-slate-900 border-slate-800 mr-4' : 'bg-white border-slate-200 mr-4') : (isDark ? 'bg-emerald-950/30 border-emerald-900/50 ml-4' : 'bg-emerald-50/50 border-emerald-100 ml-4')">
+                                    <button @click="speak(line.pt)" class="shrink-0 w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200 flex items-center justify-center transition text-xs mt-0.5" title="استمع لهذه الجملة">
+                                        <i class="fa-solid fa-volume-high"></i>
+                                    </button>
+                                    <div class="flex-1 space-y-1">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-xs font-bold text-emerald-600" x-text="line.speaker"></span>
+                                        </div>
+                                        <p class="font-inter font-semibold text-slate-900 text-sm dir-ltr text-left" :class="isDark ? 'text-slate-100' : ''" x-text="line.pt"></p>
+                                        <p class="text-xs text-slate-500" :class="isDark ? 'text-slate-400' : ''" x-text="line.ar"></p>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </section>
+
         <!-- TAB 5: VERB CONJUGATOR (تصريف الأفعال البرتغالية الشاملة) -->
         <section x-show="activeTab === 'verbs'" class="space-y-6 max-w-5xl mx-auto">
             <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-6">
@@ -1045,6 +1221,19 @@
                 mobileMenuOpen: false,
                 showProfileModal: false,
 
+                // Dark Mode & Daily Goal State
+                isDark: localStorage.getItem('fb_dark_mode') === 'true',
+                dailyGoal: parseInt(localStorage.getItem('fb_daily_goal') || '10'),
+                todayLearnedCount: 0,
+
+                // Dialogues State
+                activeDialogueId: 'airport',
+                dialoguesList: [{"id": "airport", "title": "في المطار (No Aeroporto)", "icon": "fa-plane-arrival", "badge": "السفر والتنقل", "description": "حوار عند الوصول إلى مطار ريو دي جانيرو أو ساو باولو وإنهاء إجراءات الجوازات والجمارك.", "lines": [{"speaker": "ضابط الجوازات", "pt": "Boa tarde! Seu passaporte e formulário de imigração, por favor.", "ar": "مساء الخير! جواز سفرك واستمارة الهجرة من فضلك."}, {"speaker": "المسافر", "pt": "Boa tarde! Aqui estão os documentos.", "ar": "مساء الخير! تفضل، ها هي المستندات."}, {"speaker": "ضابط الجوازات", "pt": "Qual é o motivo da sua viagem ao Brasil?", "ar": "ما هو سبب زيارتك للبرازيل؟"}, {"speaker": "المسافر", "pt": "Vim a turismo por duas semanas. Vou conhecer o Rio de Janeiro.", "ar": "أتيت للسياحة لمدة أسبوعين. سأزور ريو دي جانيرو."}, {"speaker": "ضابط الجوازات", "pt": "Perfeito. Onde você vai ficar hospedado?", "ar": "ممتاز. أين ستقيم؟"}, {"speaker": "المسافر", "pt": "No Hotel Copacabana Palace. Aqui está a reserva.", "ar": "في فندق كوباكابانا بالاس. ها هو حجز الفندق."}, {"speaker": "ضابط الجوازات", "pt": "Tudo certo! Tenha uma excelente estadia no Brasil. Bem-vindo!", "ar": "كل شيء تمام! أتمنى لك إقامة رائعة في البرازيل. أهلاً بك!"}, {"speaker": "المسافر", "pt": "Muito obrigado! Tenha um bom dia.", "ar": "شكراً جزيلاً! أتمنى لك يوماً طيباً."}]}, {"id": "hotel", "title": "حجز الفندق وتسجيل الوصول (No Hotel)", "icon": "fa-hotel", "badge": "الإقامة والخدمات", "description": "حوار في مكتب الاستقبال لتسجيل الوصول والسؤال عن الإفطار وكلمة مرور الواي فاي.", "lines": [{"speaker": "المسافر", "pt": "Olá, boa tarde! Eu tenho uma reserva em nome de Ahmed.", "ar": "مرحباً، مساء الخير! لدي حجز باسم أحمد."}, {"speaker": "موظف الاستقبال", "pt": "Olá! Deixe-me verificar no sistema... Sim, um quarto duplo com vista para o mar.", "ar": "أهلاً بك! دعني أتحقق في النظام... نعم، غرفة مزدوجة مطلة على البحر."}, {"speaker": "المسافر", "pt": "Isso mesmo! O café da manhã está incluído?", "ar": "بالضبط! هل وجبة الإفطار مشمولة؟"}, {"speaker": "موظف الاستقبال", "pt": "Sim, servido diariamente das 6h às 10h no segundo andar.", "ar": "نعم، يُقدّم يومياً من الساعة 6 حتى 10 صباحاً في الطابق الثاني."}, {"speaker": "المسافر", "pt": "Maravilha! Qual é a senha do Wi-Fi?", "ar": "رائع! ما هي كلمة مرور الواي فاي؟"}, {"speaker": "موظف الاستقبال", "pt": "A senha é 'brasil2026'. Aqui está a chave do seu quarto, número 504.", "ar": "كلمة المرور هي 'brasil2026'. تفضل مفتاح غرفتك، رقم 504."}]}, {"id": "restaurant", "title": "في المطعم البرازيلي (No Restaurante)", "icon": "fa-utensils", "badge": "المطاعم والطعام", "description": "طلب أشهر الأطباق البرازيلية (Picanha و Feijoada و Guaraná) وطلب الحساب.", "lines": [{"speaker": "النادلة", "pt": "Boa noite! Mesa para quantas pessoas?", "ar": "مساء الخير! طاولة لكم شخص؟"}, {"speaker": "الزبون", "pt": "Boa noite! Mesa para duas pessoas, por favor.", "ar": "مساء الخير! طاولة لشخصين، من فضلك."}, {"speaker": "النادلة", "pt": "Aqui está o cardápio. O que gostariam de beber para começar?", "ar": "تفضل قائمة الطعام. ماذا تودان أن تشربا في البداية؟"}, {"speaker": "الزبون", "pt": "Um suco de maracujá e um refrigerante Guaraná bem gelado, por favor.", "ar": "عصير باشن فروت ومشروب غوارانا برازيلي مثلج جداً، من فضلك."}, {"speaker": "النادلة", "pt": "E para comer, já escolheram?", "ar": "وبالنسبة للطعام، هل اخترتما بعد؟"}, {"speaker": "الزبون", "pt": "Queremos uma picanha grelhada com arroz, feijão e farofa.", "ar": "نريد بيكانيا مشوية (ستيك برازيلي) مع أرز وفاصولياء وفاروفا."}, {"speaker": "الزبون", "pt": "Estava tudo delicioso! Pode trazer a conta, por favor?", "ar": "كان كل شيء لذيذاً للغاية! هل يمكنك إحضار الحساب من فضلك؟"}, {"speaker": "النادلة", "pt": "Com certeza! Aceitamos cartão ou dinheiro.", "ar": "بكل تأكيد! نقبل البطاقة الائتمانية أو الدفع النقدي."}]}, {"id": "beach", "title": "على شاطئ ريو (Na Praia de Copacabana)", "icon": "fa-umbrella-beach", "badge": "الأنشطة والترفيه", "description": "استئجار كراسي وشمسية، شراء ماء جوز الهند البارد وتجاذب أطراف الحديث.", "lines": [{"speaker": "السائح", "pt": "Olá, amigo! Quanto custa o aluguel de duas cadeiras e um guarda-sol?", "ar": "مرحباً يا صديقي! كم تكلفة استئجار كرسيين ومظلة شمسية؟"}, {"speaker": "بائع الشاطئ", "pt": "Fica 30 reais o dia todo, meu camarada!", "ar": "التكلفة 30 ريال برازيلي طوال اليوم يا صاحبي!"}, {"speaker": "السائح", "pt": "Ótimo! Você também tem água de coco bem gelada?", "ar": "ممتاز! هل لديك أيضاً ماء جوز هند مثلج؟"}, {"speaker": "بائع الشاطئ", "pt": "Tenho sim, acabei de abrir! O mar hoje está uma beleza para nadar.", "ar": "نعم بالطبع، فتحتها للتو! البحر اليوم رائع جداً للسباحة."}, {"speaker": "السائح", "pt": "A praia de Copacabana é realmente fantástica!", "ar": "شاطئ كوباكابانا رائع حقاً وخيالي!"}, {"speaker": "بائع الشاطئ", "pt": "Aproveite bastante o sol e o Rio de Janeiro!", "ar": "استمتع كثيراً بالشمس ومدينة ريو دي جانيرو!"}]}, {"id": "uber", "title": "في التاكسي / أوبر (No Táxi / Uber)", "icon": "fa-car", "badge": "التنقل والمواصلات", "description": "تحديد الوجهة، الحديث عن الازدحام المروري، والوصول للوجهة المطلوبة.", "lines": [{"speaker": "السائق", "pt": "Olá! Bom dia, Ahmed?", "ar": "أهلاً! صباح الخير، كابتن أحمد؟"}, {"speaker": "الراكب", "pt": "Bom dia! Sim, sou eu. Vamos para o Pão de Açúcar, por favor.", "ar": "صباح الخير! نعم، أنا هو. سنذهب إلى جبل جبل السكر (Pão de Açúcar) من فضلك."}, {"speaker": "السائق", "pt": "Perfeito! O trânsito hoje está tranquilo na orla.", "ar": "تمام! حركة المرور اليوم هادئة وسلسة على الكورنيش."}, {"speaker": "الراكب", "pt": "Quanto tempo devemos levar para chegar lá?", "ar": "كم من الوقت سنتستغرق تقريباً للوصول إلى هناك؟"}, {"speaker": "السائق", "pt": "Cerca de vinte minutos. Você é de onde?", "ar": "حوالي عشرين دقيقة. من أين أنت؟"}, {"speaker": "الراكب", "pt": "Sou do mundo árabe! Estou adorando o Brasil e a simpatia das pessoas.", "ar": "أنا من العالم العربي! معجب جداً بالبرازيل وبشاشة وطيبة الناس هنا."}, {"speaker": "السائق", "pt": "Chegamos ao destino! Pode desembarcar pela direita com cuidado.", "ar": "وصلنا إلى وجهتك! يمكنك النزول من الجهة اليمنى بحذر."}, {"speaker": "الراكب", "pt": "Muito obrigado pela corrida! Tenha um ótimo dia.", "ar": "شكراً جزيلاً لك على التوصيلة! أتمنى لك يوماً رائعاً."}]}, {"id": "friends", "title": "التعارف وبناء صداقات (Fazendo Amigos)", "icon": "fa-user-group", "badge": "التواصل الاجتماعي", "description": "محادثة ودية للتعارف وتبادل الاهتمامات وأرقام واتساب.", "lines": [{"speaker": "لوكاس", "pt": "E aí, tudo bem? Você fala português muito bem!", "ar": "أهلاً، كيف حالك؟ أنت تتحدث البرتغالية بشكل جيد جداً!"}, {"speaker": "أحمد", "pt": "Obrigado! Estou estudando há alguns meses pelo FalaBrasil.", "ar": "شكراً لك! أنا أدرس منذ بضعة أشهر عبر منصة FalaBrasil."}, {"speaker": "لوكاس", "pt": "Que massa! O que você mais gosta aqui no Brasil?", "ar": "يا له من شيء رائع! ما أكثر ما تحبه هنا في البرازيل؟"}, {"speaker": "أحمد", "pt": "A música, a natureza e com certeza o futebol!", "ar": "الموسيقى، الطبيعة الخلابة، وبالتأكيد كرة القدم!"}, {"speaker": "لوكاس", "pt": "Você torce para algum time brasileiro?", "ar": "هل تشجع أي فريق برازيلي؟"}, {"speaker": "أحمد", "pt": "Gosto muito do Flamengo e do Santos!", "ar": "أحب كثيراً نادي فلامنغو ونادي سانتوس!"}, {"speaker": "لوكاس", "pt": "Show de bola! Me passa o seu WhatsApp para marcarmos um futebol?", "ar": "إبداع! أعطني رقم واتساب الخاص بك لنرتب للعب كرة القدم سوياً؟"}, {"speaker": "أحمد", "pt": "Com certeza! Anota aí o meu número...", "ar": "بكل تأكيد! سجّل عندك رقمي..."}]}],
+
+                // Quiz Mode: 'reading' or 'listening'
+                quizMode: 'reading',
+                revealListeningWord: false,
+
                 // Gamification State (Connected to System)
                 xp: 0,
                 streak: 1,
@@ -1102,8 +1291,9 @@
                     { id: 'flashcards', name: 'البطاقات التعليمية', icon: 'fa-solid fa-clone' },
                     { id: 'quiz', name: 'ساحة التحديات', icon: 'fa-solid fa-gamepad' },
                     { id: 'dictionary', name: 'القاموس الشامل', icon: 'fa-solid fa-book-open' },
+                    { id: 'dialogues', name: 'المحادثات والمواقف', icon: 'fa-solid fa-comments-dollar' },
                     { id: 'verbs', name: 'تصريف الأفعال', icon: 'fa-solid fa-list-check' },
-                    { id: 'slang', name: 'العامية البرازيلية', icon: 'fa-solid fa-comments' },
+                    { id: 'slang', name: 'العامية البرازيلية', icon: 'fa-solid fa-masks-theater' },
                     { id: 'ai_tutor', name: 'المعلم الذكي AI', icon: 'fa-solid fa-robot' },
                 ],
 
@@ -1169,10 +1359,54 @@
                     { id: 10, word: "obrigado", phonetic: "أوبريغادو", pos: "تعبير", translation: "شكراً لك", level: "A1", example: "Muito obrigado pela ajuda!", exampleTr: "شكراً جزيلاً على المساعدة!" },
                 ],
 
+                // DARK MODE & DAILY GOAL
+                toggleDarkMode() {
+                    this.isDark = !this.isDark;
+                    localStorage.setItem('fb_dark_mode', this.isDark ? 'true' : 'false');
+                },
+
+                updateTodayCount() {
+                    const today = new Date().toISOString().split('T')[0];
+                    const storedDay = localStorage.getItem('fb_today_date');
+                    if (storedDay !== today) {
+                        localStorage.setItem('fb_today_date', today);
+                        localStorage.setItem('fb_today_learned', '0');
+                        this.todayLearnedCount = 0;
+                    } else {
+                        this.todayLearnedCount = parseInt(localStorage.getItem('fb_today_learned') || '0');
+                    }
+                },
+
+                incrementTodayLearned() {
+                    this.updateTodayCount();
+                    this.todayLearnedCount += 1;
+                    localStorage.setItem('fb_today_learned', this.todayLearnedCount.toString());
+                    if (this.todayLearnedCount === this.dailyGoal) {
+                        this.xp += 30;
+                        this.showToast('🎯 رائع! حققت هدفك اليومي بالكامل (+30 XP)!', 'success');
+                        this.saveProgress();
+                    }
+                },
+
+                playFullDialogue(dialogue) {
+                    if (!dialogue || !dialogue.lines) return;
+                    this.activeDialogueId = dialogue.id;
+                    let i = 0;
+                    const playNext = () => {
+                        if (i < dialogue.lines.length) {
+                            this.speak(dialogue.lines[i].pt);
+                            i++;
+                            setTimeout(playNext, 3500);
+                        }
+                    };
+                    playNext();
+                },
+
                 // INITIALIZATION
                 async initApp() {
                     this.loadProgress();
                     this.checkStreak();
+                    this.updateTodayCount();
                     this.apiKeyInput = this.userApiKey;
 
                     // 1. Try local storage cache
@@ -1403,6 +1637,7 @@
                         }
                         // Remove from difficult if previously added
                         this.difficultWords = this.difficultWords.filter(item => item !== id);
+                        this.incrementTodayLearned();
                         this.showToast('+15 XP • أتقنت الكلمة بنجاح! ✓', 'success');
                     } else if (status === 'good') {
                         this.xp += 5;
@@ -1438,6 +1673,7 @@
                         this.learnedWords.push(id);
                         this.xp += 10;
                         this.difficultWords = this.difficultWords.filter(item => item !== id);
+                        this.incrementTodayLearned();
                         this.showToast('+10 XP • تم حفظ الكلمة! ✓', 'success');
                     }
                     this.saveProgress();
