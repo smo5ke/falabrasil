@@ -1,0 +1,21 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Office Temporary Files
+~$*.xlsx
+~$*.xls
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary or Log Files
+*.tmp
+*.log
+temp*
+.env
