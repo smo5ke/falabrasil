@@ -1,0 +1,16 @@
+{
+  "name": "FalaBrasil | تعلم البرتغالية البرازيلية",
+  "short_name": "FalaBrasil",
+  "description": "منصة شاملة واحترافية لتعلم 10,000 كلمة في اللغة البرتغالية البرازيلية",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#009c3b",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇧🇷</text></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

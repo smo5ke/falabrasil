@@ -9,6 +9,8 @@
     <meta property="og:title" content="FalaBrasil | 10,000 كلمة برتغالية برازيلية">
     <meta property="og:description" content="منصة شاملة: بطاقات استذكار، اختبارات، تصريف الأفعال، العامية البرازيلية ومعلم ذكي AI.">
     <meta property="og:type" content="website">
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#009c3b">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -92,7 +94,7 @@
     </style>
 </head>
 
-<body x-data="portugueseApp()" x-init="initApp()" class="min-h-screen flex flex-col bg-slate-50 text-slate-800 antialiased selection:bg-emerald-500 selection:text-white">
+<body x-data="portugueseApp()" x-init="initApp()" @keydown.window="handleKeydown($event)" class="min-h-screen flex flex-col bg-slate-50 text-slate-800 antialiased selection:bg-emerald-500 selection:text-white">
 
     <!-- TOAST NOTIFICATION -->
     <div x-show="toast.show" x-transition.opacity.duration.300ms style="display: none;"
@@ -220,6 +222,10 @@
                         <input type="file" accept=".json" @change="importProgress" class="hidden">
                     </label>
                 </div>
+                <button @click="exportAnki()" class="w-full py-2.5 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-layer-group text-emerald-600"></i>
+                    <span>تصدير الكلمات المتقنة لتطبيق Anki (.txt)</span>
+                </button>
                 <button @click="resetProgressConfirm()" class="w-full py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-xs transition border border-red-200">
                     <i class="fa-solid fa-trash-can ml-1"></i> إعادة ضبط التقدم بالكامل
                 </button>
@@ -572,6 +578,15 @@
                     </div>
                 </div>
             </template>
+
+            <!-- Keyboard Shortcuts Hint for Desktop -->
+            <div class="hidden sm:flex items-center justify-center gap-4 text-[11px] text-slate-400 font-medium">
+                <span>مسافة <kbd class="px-1.5 py-0.5 bg-slate-200 text-slate-700 rounded text-[10px] font-mono">Space</kbd> لقلب البطاقة</span>
+                <span>•</span>
+                <span>الأسهم <kbd class="px-1.5 py-0.5 bg-slate-200 text-slate-700 rounded text-[10px] font-mono">←</kbd> <kbd class="px-1.5 py-0.5 bg-slate-200 text-slate-700 rounded text-[10px] font-mono">→</kbd> للتنقل</span>
+                <span>•</span>
+                <span>الأرقام <kbd class="px-1.5 py-0.5 bg-slate-200 text-slate-700 rounded text-[10px] font-mono">1, 2, 3</kbd> للتقييم</span>
+            </div>
 
             <!-- Spaced Repetition Feedback Buttons -->
             <template x-if="currentCard">
@@ -1607,13 +1622,66 @@
                     }
                 },
 
+                speechRate: 0.9,
+
+                handleKeydown(e) {
+                    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+                    if (this.activeTab === 'flashcards') {
+                        if (e.code === 'Space') {
+                            e.preventDefault();
+                            this.isFlipped = !this.isFlipped;
+                        } else if (e.code === 'ArrowLeft') {
+                            e.preventDefault();
+                            this.nextCard();
+                        } else if (e.code === 'ArrowRight') {
+                            e.preventDefault();
+                            this.prevCard();
+                        } else if (e.key === '1') {
+                            this.markCard('hard');
+                        } else if (e.key === '2') {
+                            this.markCard('good');
+                        } else if (e.key === '3') {
+                            this.markCard('easy');
+                        } else if (e.key.toLowerCase() === 's' && this.currentCard) {
+                            this.speak(this.currentCard.word);
+                        }
+                    } else if (this.activeTab === 'quiz' && !this.quizCompleted && this.currentQuizQuestion) {
+                        if (!this.quizAnswered) {
+                            const idx = parseInt(e.key) - 1;
+                            if (idx >= 0 && idx < this.currentQuizQuestion.options.length) {
+                                this.selectQuizOption(this.currentQuizQuestion.options[idx]);
+                            }
+                        } else if (e.code === 'Enter' || e.code === 'Space') {
+                            e.preventDefault();
+                            this.nextQuizQuestion();
+                        }
+                    }
+                },
+
+                exportAnki() {
+                    const list = this.learnedWords.length > 0 ?
+                        this.fullDictionary.filter(w => this.learnedWords.includes(w.id)) :
+                        this.fullDictionary.slice(0, 1000);
+                    let tsv = "#separator:tab\n#html:true\n";
+                    list.forEach(w => {
+                        tsv += `${w.word}\t${w.translation} [${w.phonetic}]\t${w.level}\t${w.example} - ${w.exampleTr}\n`;
+                    });
+                    const blob = new Blob([tsv], { type: 'text/tab-separated-values;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `falabrasil_anki_export.txt`;
+                    a.click();
+                    this.showToast('تم تصدير ' + list.length + ' كلمة لتطبيق Anki! 🗃️', 'success');
+                },
+
                 // PRONUNCIATION
                 speak(text) {
                     if ('speechSynthesis' in window) {
                         window.speechSynthesis.cancel();
                         const utterance = new SpeechSynthesisUtterance(text);
                         utterance.lang = 'pt-BR';
-                        utterance.rate = 0.9;
+                        utterance.rate = this.speechRate || 0.9;
                         window.speechSynthesis.speak(utterance);
                     }
                 },
