@@ -1034,6 +1034,24 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- Fast Jump Navigation (شريط الانزلاق والقفز المباشر لكلمة محددة) -->
+                <div class="flex items-center gap-3 pt-2 border-t border-slate-100">
+                    <span class="text-[10px] text-slate-400 font-bold shrink-0 flex items-center gap-1">
+                        <i class="fa-solid fa-forward-fast text-emerald-600"></i> قفز سريع
+                    </span>
+                    <input type="range" min="1" :max="Math.max(1, currentDeck.length)" :value="Math.min(currentCardIndex + 1, Math.max(1, currentDeck.length))"
+                           @input="jumpToCard($event.target.value)"
+                           class="flex-1 h-1.5 accent-emerald-600 cursor-pointer" dir="ltr"
+                           title="اسحب للتنقل السريع بين البطاقات">
+                    <div class="flex items-center gap-1 shrink-0">
+                        <input type="number" min="1" :max="currentDeck.length" :value="currentCardIndex + 1"
+                               @change="jumpToCard($event.target.value)" @keydown.enter="$event.target.blur()"
+                               class="w-14 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-inter text-center focus:outline-none focus:border-emerald-500"
+                               title="اكتب رقم الكلمة واضغط Enter">
+                        <span class="text-[10px] text-slate-400 font-inter" x-text="'/ ' + currentDeck.length"></span>
+                    </div>
+                </div>
             </div>
 
             <!-- Empty Deck State -->
@@ -2129,6 +2147,12 @@
                     await this.loadSrsData();
                     this.apiKeyInput = this.userApiKey;
 
+                    // حفظ موضع الدراسة تلقائياً عند أي تغيير (يعود به المستخدم بعد تحديث الصفحة)
+                    this.$watch('currentCardIndex', () => this.saveStudyPosition());
+                    this.$watch('currentStageCode', () => this.saveStudyPosition());
+                    this.$watch('deckFilter', () => this.saveStudyPosition());
+                    this.$watch('activeTab', () => this.saveStudyPosition());
+
                     // 1. Try local storage cache (مع التحقق من إصدار القاموس)
                     try {
                         const storedVersion = await localforage.getItem('falaBrasil_dict_version');
@@ -2137,7 +2161,7 @@
                         if (storedDict && Array.isArray(storedDict) && storedDict.length > 0 && (storedVersion === DICT_VERSION || isCustom)) {
                             this.fullDictionary = storedDict;
                             this.dictionaryLoaded = true;
-                            this.startStage(1);
+                            this.restoreStudyPosition();
                             return;
                         }
                         // نسخة قديمة مخزنة — سيتم جلب النسخة الجديدة أدناه دون فقدان التقدم
@@ -2156,7 +2180,7 @@
                                 await localforage.setItem('falaBrasil_dictionary', data);
                                 await localforage.setItem('falaBrasil_dict_version', DICT_VERSION);
                                 this.dictionaryLoaded = true;
-                                this.startStage(1);
+                                this.restoreStudyPosition();
                                 this.showToast('تم تحميل ' + data.length.toLocaleString('en-US') + ' كلمة بنجاح! 🇧🇷', 'success');
                                 return;
                             }
@@ -2171,8 +2195,59 @@
                 loadSampleDictionary() {
                     this.fullDictionary = this.rawDictionary;
                     this.dictionaryLoaded = true;
-                    this.startStage(1);
+                    this.restoreStudyPosition();
                     this.showToast('تم تفعيل الكلمات الأساسية مؤقتاً', 'warn');
+                },
+
+                // ==================== STUDY POSITION (حفظ واستعادة موضع الدراسة) ====================
+                saveStudyPosition() {
+                    try {
+                        localStorage.setItem('fb_study_position', JSON.stringify({
+                            code: this.currentStageCode,
+                            index: this.currentCardIndex,
+                            filter: this.deckFilter,
+                            tab: this.activeTab
+                        }));
+                    } catch (e) { /* تجاهل */ }
+                },
+
+                // عند تحديث الصفحة: العودة لنفس المرحلة والبطاقة والتبويب الذي كان عليها المستخدم
+                restoreStudyPosition() {
+                    try {
+                        const raw = localStorage.getItem('fb_study_position');
+                        if (!raw) { this.startStage(1); return; }
+                        const p = JSON.parse(raw);
+                        const validCodes = ['A1', 'A2', 'B1', 'B2', 'C1/C2', 'ALL'];
+                        this.currentStageCode = validCodes.includes(p.code) ? p.code : 'A1';
+                        const st = this.stagesList.find(s => s.code === this.currentStageCode);
+                        this.currentStage = st ? st.level : 1;
+                        this.deckFilter = ['all', 'unlearned', 'difficult', 'favorites'].includes(p.filter) ? p.filter : 'all';
+                        this.srsReviewMode = false;
+                        this.reviewDeckCache = null;
+                        this.isFlipped = false;
+                        // استعادة رقم البطاقة مع تقييدها بحجم المجموعة الفعلي
+                        this.currentCardIndex = Math.min(Math.max(0, parseInt(p.index) || 0), Math.max(0, this.currentDeck.length - 1));
+                        // استعادة آخر تبويب مفتوح
+                        const validTabs = ['stages', 'flashcards', 'quiz', 'memory_game', 'dictionary', 'dialogues', 'verbs', 'slang', 'ai_tutor'];
+                        if (p.tab && validTabs.includes(p.tab)) {
+                            this.activeTab = p.tab;
+                            if (p.tab === 'memory_game' && this.memoryCards.length === 0) this.restartMemoryGame();
+                        } else {
+                            this.activeTab = 'flashcards';
+                        }
+                    } catch (e) {
+                        this.startStage(1);
+                    }
+                },
+
+                // القفز المباشر لبطاقة برقمها (من شريط الانزلاق أو حقل الإدخال)
+                jumpToCard(n) {
+                    const deck = this.currentDeck;
+                    if (!deck.length) return;
+                    const idx = parseInt(n, 10) - 1;
+                    if (!Number.isFinite(idx)) return;
+                    this.currentCardIndex = Math.min(deck.length - 1, Math.max(0, idx));
+                    this.isFlipped = false;
                 },
 
                 // STREAK & PROGRESS MANAGEMENT
