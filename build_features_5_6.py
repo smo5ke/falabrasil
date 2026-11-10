@@ -26,7 +26,7 @@ def update_falabrasil():
 
     # 2. Add Fluency Forecast Modal
     modal_anchor = "<!-- PRONUNCIATION RULES MODAL (دليل أسرار النطق البرازيلي) -->"
-    fluency_modal_html = """    <!-- FLUENCY FORECAST & MILESTONES MODAL (حاسبة وتوقع الطلاقة اللغوية والـ 10,000 كلمة) -->
+    fluency_modal_html = """    <!-- FLUENCY FORECAST & MILESTONES MODAL (حاسبة وتوقع الطلاقة اللغوية والقاموس الكامل 5,000 كلمة) -->
     <div x-show="showFluencyModal" style="display: none;" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full space-y-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto" @click.outside="showFluencyModal = false">
             <!-- Modal Header -->
@@ -37,7 +37,7 @@ def update_falabrasil():
                     </div>
                     <div>
                         <h3 class="font-black text-slate-900 text-lg">حاسبة وتوقع الطلاقة اللغوية</h3>
-                        <p class="text-xs text-slate-400">تنبؤ زمني دقيق لمسارك الشخصي نحو إتقان 10,000 كلمة برتغالية</p>
+                        <p class="text-xs text-slate-400">تنبؤ زمني دقيق لمسارك الشخصي نحو إتقان 5,000 كلمة عالية التكرار</p>
                     </div>
                 </div>
                 <button @click="showFluencyModal = false" class="text-slate-400 hover:text-slate-600 p-1">
@@ -58,12 +58,12 @@ def update_falabrasil():
                     <div class="text-left bg-white/80 backdrop-blur px-3.5 py-2 rounded-xl border border-blue-200 shadow-sm">
                         <span class="text-[11px] text-slate-500 block font-bold">الحصيلة المتقنة:</span>
                         <span class="text-lg font-black text-emerald-600 font-inter" x-text="learnedWords.length"></span>
-                        <span class="text-xs text-slate-400 font-inter">/ 10,000 كلمة</span>
+                        <span class="text-xs text-slate-400 font-inter" x-text="'/ ' + totalWords.toLocaleString('en-US') + ' كلمة'"></span>
                     </div>
                 </div>
                 <div class="w-full bg-blue-200/50 h-3 rounded-full overflow-hidden">
                     <div class="bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-500 h-full rounded-full transition-all duration-500"
-                         :style="`width: ${Math.min(100, Math.max(1, (learnedWords.length / 10000) * 100))}%`"></div>
+                         :style="`width: ${Math.min(100, Math.max(1, (learnedWords.length / Math.max(1, totalWords)) * 100))}%`"></div>
                 </div>
                 <p class="text-xs text-slate-600 leading-relaxed">
                     <i class="fa-solid fa-circle-info text-blue-500 ml-1"></i>
@@ -171,7 +171,7 @@ def update_falabrasil():
     header_forecast_btn = """<!-- Fluency Forecast Button & Daily Goal & Dark Mode -->
                 <div class="hidden lg:flex items-center gap-2.5">
                     <!-- Fluency Forecast Pill Button -->
-                    <button @click="showFluencyModal = true" class="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-2xl border text-xs font-bold transition shadow-sm bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border-blue-200 text-blue-700 hover:from-blue-500/20 hover:to-indigo-500/20" title="حاسبة وتوقع الطلاقة والوصول لـ 10,000 كلمة">
+                    <button @click="showFluencyModal = true" class="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-2xl border text-xs font-bold transition shadow-sm bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border-blue-200 text-blue-700 hover:from-blue-500/20 hover:to-indigo-500/20" title="حاسبة وتوقع الطلاقة والوصول لـ 5,000 كلمة">
                         <i class="fa-solid fa-chart-line text-blue-600"></i>
                         <span>توقع الطلاقة ⏱️</span>
                     </button>
@@ -185,7 +185,7 @@ def update_falabrasil():
     profile_forecast_btn = """<!-- Fluency Forecast Trigger in Profile Modal -->
             <button @click="showProfileModal = false; showFluencyModal = true" class="w-full py-2.5 px-3 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-800 border border-blue-200 font-bold rounded-2xl text-xs transition flex items-center justify-center gap-2">
                 <i class="fa-solid fa-chart-line text-blue-600"></i>
-                <span>عرض حاسبة الطلاقة والتنبؤ الزمني (10k Roadmap) ⏱️</span>
+                <span>عرض حاسبة الطلاقة والتنبؤ الزمني (5k Roadmap) ⏱️</span>
             </button>
 
             """
@@ -204,7 +204,7 @@ def update_falabrasil():
                         </div>
                         <div>
                             <div class="flex items-center gap-2">
-                                <h3 class="font-black text-slate-900 text-lg">حاسبة وتوقع الطلاقة اللغوية (10k Roadmap)</h3>
+                                <h3 class="font-black text-slate-900 text-lg">حاسبة وتوقع الطلاقة اللغوية (5k Roadmap)</h3>
                                 <span class="bg-blue-100 text-blue-800 text-xs px-2.5 py-0.5 rounded-full font-bold">ذكية وتفاعلية</span>
                             </div>
                             <p class="text-xs text-slate-500 mt-1">
@@ -227,9 +227,9 @@ def update_falabrasil():
                         <span class="px-2.5 py-1 bg-blue-50 text-blue-700 font-inter font-bold rounded-xl border border-blue-200" x-text="dailyGoal + ' كلمات/يوم'"></span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="text-slate-500">التاريخ المتوقع لختم الـ 10,000 كلمة بالكامل:</span>
-                        <span class="font-bold text-indigo-700 font-inter" x-text="getMilestoneForecast(10000).dateStr"></span>
-                        <span class="text-[11px] text-slate-400 font-inter" x-text="'(خلال ' + getMilestoneForecast(10000).daysRemaining + ' يوم)'"></span>
+                        <span class="text-slate-500">التاريخ المتوقع لختم القاموس الكامل بالكامل:</span>
+                        <span class="font-bold text-indigo-700 font-inter" x-text="getMilestoneForecast(Math.max(1, totalWords)).dateStr"></span>
+                        <span class="text-[11px] text-slate-400 font-inter" x-text="'(خلال ' + getMilestoneForecast(Math.max(1, totalWords)).daysRemaining + ' يوم)'"></span>
                     </div>
                 </div>
             </div>
@@ -240,7 +240,7 @@ def update_falabrasil():
         print("5. Added Fluency Widget to Stages tab")
 
     # 6. Add Memory Match Game Section
-    dict_tab_anchor = "<!-- TAB 4: FULL DICTIONARY (القاموس الشامل 10,000 كلمة مع بحث لحظي) -->"
+    dict_tab_anchor = "<!-- TAB 4: FULL DICTIONARY"
     memory_section_html = """<!-- TAB: MEMORY MATCH GAME (لعبة الذاكرة ومطابقة الكلمات السريعة) -->
         <section x-show="activeTab === 'memory_game'" class="max-w-4xl mx-auto space-y-6">
             <!-- Game Header & Controls Card -->
@@ -271,12 +271,12 @@ def update_falabrasil():
                     <div>
                         <label class="block font-bold text-slate-700 mb-1.5">مستوى الكلمات:</label>
                         <select x-model="memoryLevel" @change="restartMemoryGame()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:border-purple-500">
-                            <option value="ALL">جميع المستويات (10,000 كلمة)</option>
-                            <option value="A1">المستوى A1 (الكلمات 1 - 1,000)</option>
-                            <option value="A2">المستوى A2 (الكلمات 1,001 - 2,500)</option>
-                            <option value="B1">المستوى B1 (الكلمات 2,501 - 5,000)</option>
-                            <option value="B2">المستوى B2 (الكلمات 5,001 - 7,500)</option>
-                            <option value="C1/C2">المستوى C1/C2 (الكلمات 7,501 - 10,000)</option>
+                            <option value="ALL">جميع المستويات (5,000 كلمة)</option>
+                            <option value="A1">المستوى A1 (الكلمات 1 - 500)</option>
+                            <option value="A2">المستوى A2 (الكلمات 501 - 1,300)</option>
+                            <option value="B1">المستوى B1 (الكلمات 1,301 - 2,300)</option>
+                            <option value="B2">المستوى B2 (الكلمات 2,301 - 3,400)</option>
+                            <option value="C1/C2">المستويان C1+C2 (الكلمات 3,401 - 5,000)</option>
                             <option value="DIFFICULT">كلماتي الصعبة فقط ⚠️</option>
                         </select>
                     </div>
@@ -409,7 +409,7 @@ def update_falabrasil():
                             <div class="flex items-center justify-between w-full mb-1">
                                 <span class="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase"
                                       :class="card.type === 'pt' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'"
-                                      x-text="card.type === 'pt' ? '🇵🇹 برتغالي' : '🇸🇦 عربي'"></span>
+                                      x-text="card.type === 'pt' ? '🇧🇷 برتغالي' : '🇸🇦 عربي'"></span>
 
                                 <template x-if="card.isMatched">
                                     <i class="fa-solid fa-circle-check text-xs text-white"></i>
@@ -487,12 +487,12 @@ def update_falabrasil():
                 getFluencyCoverage() {
                     const count = this.learnedWords.length;
                     if (count <= 0) return 10;
-                    if (count < 500) return Math.round(10 + (count / 500) * 55);
-                    if (count < 1000) return Math.round(65 + ((count - 500) / 500) * 10);
-                    if (count < 2500) return Math.round(75 + ((count - 1000) / 1500) * 10);
-                    if (count < 5000) return Math.round(85 + ((count - 2500) / 2500) * 7);
-                    if (count < 7500) return Math.round(92 + ((count - 5000) / 2500) * 4);
-                    return Math.min(99.9, Math.round((96 + ((count - 7500) / 2500) * 3.9) * 10) / 10);
+                    if (count < 500) return Math.round(10 + (count / 500) * 65);
+                    if (count < 1300) return Math.round(75 + ((count - 500) / 800) * 10);
+                    if (count < 2300) return Math.round(85 + ((count - 1300) / 1000) * 7);
+                    if (count < 3400) return Math.round(92 + ((count - 2300) / 1100) * 4);
+                    if (count < 5000) return Math.round(96 + ((count - 3400) / 1600) * 3);
+                    return 99;
                 },
 
                 getMilestoneForecast(targetCount) {
@@ -518,11 +518,11 @@ def update_falabrasil():
 
                 getMilestonesList() {
                     const list = [
-                        { code: 'A1', title: 'مبتدئ أساسي (فهم 75% من الكلام اليومي)', targetCount: 1000, badgeClass: 'bg-emerald-100 text-emerald-800' },
-                        { code: 'A2', title: 'مبتدئ متقدم (التسوق، السفر والروتين 85%)', targetCount: 2500, badgeClass: 'bg-cyan-100 text-cyan-800' },
-                        { code: 'B1', title: 'مستوى متوسط (استقلالية وحوارات العمل 92%)', targetCount: 5000, badgeClass: 'bg-amber-100 text-amber-800' },
-                        { code: 'B2', title: 'فوق المتوسط (طلاقة ومفردات مركبة 96%)', targetCount: 7500, badgeClass: 'bg-orange-100 text-orange-800' },
-                        { code: 'C1/C2', title: 'الطلاقة التامة وإتقان القاموس الكامل (99%+)', targetCount: 10000, badgeClass: 'bg-purple-100 text-purple-800' },
+                        { code: 'A1', title: 'مبتدئ أساسي (فهم 75% من الكلام اليومي)', targetCount: 500, badgeClass: 'bg-emerald-100 text-emerald-800' },
+                        { code: 'A2', title: 'مبتدئ متقدم (التسوق، السفر والروتين 85%)', targetCount: 1300, badgeClass: 'bg-cyan-100 text-cyan-800' },
+                        { code: 'B1', title: 'مستوى متوسط (استقلالية وحوارات العمل 92%)', targetCount: 2300, badgeClass: 'bg-amber-100 text-amber-800' },
+                        { code: 'B2', title: 'فوق المتوسط (طلاقة ومفردات مركبة 96%)', targetCount: 3400, badgeClass: 'bg-orange-100 text-orange-800' },
+                        { code: 'C1/C2', title: 'الطلاقة التامة وإتقان القاموس الكامل (99%+)', targetCount: 5000, badgeClass: 'bg-purple-100 text-purple-800' },
                     ];
 
                     return list.map(item => {
@@ -712,21 +712,24 @@ def update_falabrasil():
         html = html.replace(methods_anchor, new_methods + methods_anchor)
         print("9. Added Fluency Forecast & Memory Game methods")
 
-    # 10. Update navbar template @click so clicking memory_game auto initializes it
+    # 10. Update navbar template @click so clicking memory_game auto initializes it (desktop + mobile)
     old_nav_click = '@click="activeTab = tab.id"'
     new_nav_click = '@click="activeTab = tab.id; if (tab.id === \'memory_game\' && memoryCards.length === 0) restartMemoryGame()"'
     if old_nav_click in html:
         html = html.replace(old_nav_click, new_nav_click)
-        print("10. Updated nav clicks for automatic card dealing")
+        print("10. Updated desktop nav clicks for automatic card dealing")
 
-    # Write to index.html and falabrasil.html
+    old_nav_click_mobile = '@click="activeTab = tab.id; mobileMenuOpen = false"'
+    new_nav_click_mobile = '@click="activeTab = tab.id; mobileMenuOpen = false; if (tab.id === \'memory_game\' && memoryCards.length === 0) restartMemoryGame()"'
+    if old_nav_click_mobile in html:
+        html = html.replace(old_nav_click_mobile, new_nav_click_mobile)
+        print("10b. Updated mobile nav clicks for automatic card dealing")
+
+    # Write to index.html only (falabrasil.html duplicate was removed in a869860)
     with open('index.html', 'w', encoding='utf-8') as f:
         f.write(html)
 
-    with open('falabrasil.html', 'w', encoding='utf-8') as f:
-        f.write(html)
-
-    print("Success! Both index.html and falabrasil.html updated successfully.")
+    print("Success! index.html updated.")
     print(f"New length: {len(html)}")
 
 if __name__ == '__main__':
