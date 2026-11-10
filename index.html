@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FalaBrasil | منصة احترافية لتعلم 10,000 كلمة برتغالية برازيلية</title>
+    <title>FalaBrasil | منصة احترافية لتعلم 5,000 كلمة برتغالية برازيلية</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇧🇷</text></svg>">
-    <meta name="description" content="FalaBrasil - منصة تفاعلية متكاملة لتعلم 10,000 كلمة في اللغة البرتغالية البرازيلية وفق منهجية CEFR والتكرار المتباعد.">
-    <meta property="og:title" content="FalaBrasil | 10,000 كلمة برتغالية برازيلية">
+    <meta name="description" content="FalaBrasil - منصة تفاعلية متكاملة لتعلم 5,000 كلمة في اللغة البرتغالية البرازيلية وفق منهجية CEFR والتكرار المتباعد.">
+    <meta property="og:title" content="FalaBrasil | 5,000 كلمة برتغالية برازيلية">
     <meta property="og:description" content="منصة شاملة: بطاقات استذكار، اختبارات، تصريف الأفعال، العامية البرازيلية ومعلم ذكي AI.">
     <meta property="og:type" content="website">
     <link rel="manifest" href="./manifest.json">
@@ -23,6 +23,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+    <!-- Alpine.js Collapse Plugin (يجب تحميله قبل نواة Alpine) -->
+    <script src="https://unpkg.com/@alpinejs/collapse@3.13.5/dist/cdn.min.js" defer></script>
     <!-- Alpine.js for State Management -->
     <script src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js" defer></script>
 
@@ -169,7 +171,7 @@
                 </div>
                 <div>
                     <h2 class="text-2xl font-black text-slate-900">جاري تحميل القاموس...</h2>
-                    <p class="text-slate-500 text-sm mt-1">يتم تجهيز 10,000 كلمة برتغالية برازيلية تلقائياً 🚀</p>
+                    <p class="text-slate-500 text-sm mt-1">يتم تجهيز القاموس الشامل (5,000 كلمة) تلقائياً 🚀</p>
                 </div>
                 <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
                     <div class="bg-emerald-500 h-2 rounded-full animate-pulse w-3/4 mx-auto"></div>
@@ -184,7 +186,7 @@
                 <div>
                     <h2 class="text-2xl font-black text-slate-900">تحميل القاموس الشامل</h2>
                     <p class="text-slate-500 text-sm leading-relaxed mt-1">
-                        اختر ملف القاموس <b class="text-emerald-700">dictionary.json</b> أو ملف الإكسل <br> <b class="text-emerald-700">Brazilian_Portuguese_10000_Complete_Dictionary.xlsx</b>
+                        اختر ملف القاموس <b class="text-emerald-700">dictionary.json</b> أو ملف الإكسل <br> <b class="text-emerald-700">قاموس_البرتغالية_البرازيلية_5000.xlsx</b>
                     </p>
                 </div>
                 
@@ -197,7 +199,7 @@
                 </div>
 
                 <button @click="loadSampleDictionary()" class="text-xs text-slate-500 hover:text-emerald-700 font-semibold underline block mx-auto transition">
-                    المتابعة مع الكلمات الأساسية مؤقتاً (50 كلمة)
+                    المتابعة مع الكلمات الأساسية مؤقتاً (عشر كلمات)
                 </button>
                 
                 <p class="text-xs text-slate-400 bg-slate-50 p-3 rounded-xl border border-slate-100">
@@ -258,7 +260,7 @@
                 <div class="bg-emerald-50/70 border border-emerald-100 rounded-2xl p-3.5">
                     <span class="text-xs text-emerald-800 font-semibold block mb-1">الكلمات المتقنة</span>
                     <span class="text-2xl font-black text-emerald-700 font-inter" x-text="learnedWords.length"></span>
-                    <span class="text-[11px] text-emerald-600/70 block mt-0.5" x-text="'من 10,000 (' + (Math.round((learnedWords.length / 10000) * 1000) / 10) + '%)'"></span>
+                    <span class="text-[11px] text-emerald-600/70 block mt-0.5" x-text="'من ' + totalWords.toLocaleString('en-US') + ' (' + (Math.round((learnedWords.length / Math.max(1, totalWords)) * 1000) / 10) + '%)'"></span>
                 </div>
                 <div class="bg-amber-50/70 border border-amber-100 rounded-2xl p-3.5">
                     <span class="text-xs text-amber-800 font-semibold block mb-1">أيام التتابع</span>
@@ -386,7 +388,7 @@
                     <div>
                         <div class="flex items-center gap-2">
                             <span class="font-extrabold text-xl tracking-tight text-slate-900 font-inter">FalaBrasil</span>
-                            <span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded-full font-bold">10k Pro</span>
+                            <span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded-full font-bold">5k Pro</span>
                         </div>
                         <p class="text-xs text-slate-500">منصة تعلّم البرتغالية البرازيلية الشاملة</p>
                     </div>
@@ -415,7 +417,7 @@
                     <div class="flex items-center gap-2" title="الكلمات المتقنة">
                         <i class="fa-solid fa-circle-check text-emerald-600"></i>
                         <span class="font-bold text-slate-800 font-inter" x-text="learnedWords.length"></span>
-                        <span class="text-xs text-slate-400">/ 10k</span>
+                        <span class="text-xs text-slate-400" x-text="'/ ' + (totalWords > 0 ? (totalWords >= 1000 ? (totalWords/1000).toLocaleString('en-US') + 'k' : totalWords) : '0k')"></span>
                     </div>
                     <div class="w-px h-4 bg-slate-300"></div>
                     <div class="flex items-center gap-1.5" title="نقاط الخبرة والرتبة">
@@ -482,14 +484,13 @@
             <!-- Hero Banner -->
             <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-900 text-white p-6 sm:p-8 shadow-xl">
                 <div class="relative z-10 max-w-2xl">
-                    <span class="inline-block bg-white/20 backdrop-blur-md text-emerald-100 text-xs px-3 py-1 rounded-full font-semibold mb-3">
-                        🇧🇷 المنهجية المعتمدة لـ 10,000 كلمة برتغالية
+                    <span class="inline-block bg-white/20 backdrop-blur-md text-emerald-100 text-xs px-3 py-1 rounded-full font-semibold mb-3" x-text="'🇧🇷 المنهجية المعتمدة لـ ' + totalWords.toLocaleString('en-US') + ' كلمة برتغالية'">
                     </span>
                     <h1 class="text-2xl sm:text-4xl font-black leading-tight mb-3">
                         أتقن البرتغالية البرازيلية خطوة بخطوة من A1 إلى C2
                     </h1>
                     <p class="text-emerald-100 text-sm sm:text-base leading-relaxed mb-6">
-                        خطة محكمة مبنية على قاعدة باريتو (80/20). الكلمات الـ 1,000 الأولى تمنحك القدرة على فهم أكثر من 75% من المحادثات البرازيلية اليومية!
+                        خطة محكمة مبنية على قاعدة باريتو (80/20). <span x-text="getStageTotalCount('A1').toLocaleString('en-US')"></span> كلمة عالية التكرار (المستوى A1) تمنحك فهم أكثر من 75% من المحادثات البرازيلية اليومية!
                     </p>
                     <div class="flex flex-wrap gap-3">
                         <button @click="startStage(1)" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-6 py-3 rounded-2xl shadow-lg transition transform active:scale-95 flex items-center gap-2">
@@ -498,14 +499,14 @@
                         </button>
                         <button @click="activeTab = 'dictionary'" class="bg-white/10 hover:bg-white/20 text-white font-semibold px-5 py-3 rounded-2xl backdrop-blur-md transition flex items-center gap-2">
                             <i class="fa-solid fa-book-open"></i>
-                            <span>استعراض القاموس الشامل (10,000 كلمة)</span>
+                            <span x-text="'استعراض القاموس الشامل (' + totalWords.toLocaleString('en-US') + ' كلمة)'"></span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Decorative Background Graphic -->
                 <div class="absolute -left-10 -bottom-10 opacity-15 text-white text-[180px] pointer-events-none font-bold">
-                    10K
+                    5K
                 </div>
             </div>
 
@@ -517,7 +518,7 @@
                             <div class="flex items-center justify-between mb-4">
                                 <span class="px-3 py-1 rounded-xl text-xs font-bold"
                                       :class="stage.badgeColor" x-text="stage.code"></span>
-                                <span class="text-xs text-slate-400 font-medium" x-text="stage.range"></span>
+                                <span class="text-xs text-slate-400 font-medium" x-text="stageRange(stage)"></span>
                             </div>
 
                             <h3 class="text-xl font-bold text-slate-900 mb-2" x-text="stage.title"></h3>
@@ -701,6 +702,10 @@
 
                             <div class="text-center my-auto space-y-4">
                                 <h3 class="text-3xl font-extrabold text-amber-300" x-text="currentCard.translation"></h3>
+                                <!-- صيغة مشتقة (مثل الأفعال المصرفة) -->
+                                <p x-show="currentCard.form && currentCard.form !== currentCard.word" class="text-xs text-slate-400">
+                                    صيغة من: <span class="text-emerald-400 font-inter font-bold" x-text="currentCard.base"></span>
+                                </p>
 
                                 <!-- Example Sentence -->
                                 <div class="bg-slate-800/80 rounded-2xl p-4 text-right space-y-2 border border-slate-700 relative">
@@ -898,7 +903,7 @@
             </div>
         </section>
 
-        <!-- TAB 4: FULL DICTIONARY (القاموس الشامل 10,000 كلمة مع بحث لحظي) -->
+        <!-- TAB 4: FULL DICTIONARY (القاموس الشامل 5,000 كلمة مع بحث لحظي) -->
         <section x-show="activeTab === 'dictionary'" class="space-y-6">
             <!-- Search & Filters Bar -->
             <div class="bg-white rounded-3xl border border-slate-200 p-4 sm:p-6 shadow-sm space-y-4">
@@ -913,11 +918,13 @@
                     <!-- CEFR Level Filter -->
                     <select x-model="selectedLevel" class="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none">
                         <option value="ALL">جميع المستويات (A1 - C2)</option>
-                        <option value="A1">المستوى A1 (1-1000)</option>
-                        <option value="A2">المستوى A2 (1001-2500)</option>
-                        <option value="B1">المستوى B1 (2501-5000)</option>
-                        <option value="B2">المستوى B2 (5001-7500)</option>
-                        <option value="C1/C2">المستوى C1/C2 (7501-10000)</option>
+                        <option value="A1">المستوى A1</option>
+                        <option value="A2">المستوى A2</option>
+                        <option value="B1">المستوى B1</option>
+                        <option value="B2">المستوى B2</option>
+                        <option value="C1">المستوى C1</option>
+                        <option value="C2">المستوى C2</option>
+                        <option value="C1/C2">المستويان C1 + C2</option>
                     </select>
 
                     <!-- Status Filter -->
@@ -1280,13 +1287,16 @@
     <!-- FOOTER -->
     <footer class="bg-white border-t border-slate-200 py-6 mt-12">
         <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400 space-y-2">
-            <p class="font-bold text-slate-600">FalaBrasil - منصة التعلم الشامل لـ 10,000 كلمة برتغالية برازيلية 🇧🇷</p>
+            <p class="font-bold text-slate-600">FalaBrasil - منصة التعلم الشامل لـ 5,000 كلمة عالية التكرار بالبرتغالية البرازيلية 🇧🇷</p>
             <p>مصمم بمنهجية التكرار المتباعد (Spaced Repetition) ومستويات CEFR الأوروبية • يعمل بدون إنترنت (Offline Mode)</p>
         </div>
     </footer>
 
     <!-- APP ALPINE.JS LOGIC ENGINE -->
     <script>
+        // إصدار القاموس: عند تغييره يُعاد تحميل القاموس تلقائياً للمستخدمين دون فقدان تقدمهم
+        const DICT_VERSION = '5000-v1';
+
         function portugueseApp() {
             return {
                 activeTab: 'stages',
@@ -1329,6 +1339,10 @@
                 isParsing: false,
                 isAutoLoading: false,
                 fullDictionary: [],
+
+                get totalWords() {
+                    return this.fullDictionary.length;
+                },
 
                 // Dictionary Tab Filters
                 searchQuery: '',
@@ -1378,11 +1392,11 @@
                 ],
 
                 stagesList: [
-                    { level: 1, code: 'A1', title: 'مبتدئ مطلق', range: 'الكلمات 1 - 1,000', count: 1000, coverage: '75%', desc: 'الأساسيات المحورية، الكينونة، الأرقام والأفعال اليومية الأكثر شيوعاً.', badgeColor: 'bg-emerald-100 text-emerald-800' },
-                    { level: 2, code: 'A2', title: 'مبتدئ متقدم', range: 'الكلمات 1,001 - 2,500', count: 1500, coverage: '85%', desc: 'التواصل اليومي والتنقل، السفر، التسوق والتعبير عن الماضي والمستقبل.', badgeColor: 'bg-cyan-100 text-cyan-800' },
-                    { level: 3, code: 'B1', title: 'مستوى متوسط', range: 'الكلمات 2,501 - 5,000', count: 2500, coverage: '92%', desc: 'مناقشة الآراء، المشاعر، وتسيير أمور العمل والاتصالات اليومية.', badgeColor: 'bg-amber-100 text-amber-800' },
-                    { level: 4, code: 'B2', title: 'فوق المتوسط', range: 'الكلمات 5,001 - 7,500', count: 2500, coverage: '96%', desc: 'مصطلحات التقنية، الأعمال، التحليل وصياغة الخطابات المركبة.', badgeColor: 'bg-orange-100 text-orange-800' },
-                    { level: 5, code: 'C1/C2', title: 'إتقان واحتراف', range: 'الكلمات 7,501 - 10,000', count: 2500, coverage: '99%+', desc: 'المصطلحات التخصصية، البلاغة اللغوية، وعامية الشارع المتقدمة.', badgeColor: 'bg-purple-100 text-purple-800' },
+                    { level: 1, code: 'A1', title: 'مبتدئ مطلق', range: 'الكلمات 1 - 500', count: 500, coverage: '75%', desc: 'الأساسيات المحورية، الكينونة، الأرقام والأفعال اليومية الأكثر شيوعاً.', badgeColor: 'bg-emerald-100 text-emerald-800' },
+                    { level: 2, code: 'A2', title: 'مبتدئ متقدم', range: 'الكلمات 501 - 1,300', count: 800, coverage: '85%', desc: 'التواصل اليومي والتنقل، السفر، التسوق والتعبير عن الماضي والمستقبل.', badgeColor: 'bg-cyan-100 text-cyan-800' },
+                    { level: 3, code: 'B1', title: 'مستوى متوسط', range: 'الكلمات 1,301 - 2,300', count: 1000, coverage: '92%', desc: 'مناقشة الآراء، المشاعر، وتسيير أمور العمل والاتصالات اليومية.', badgeColor: 'bg-amber-100 text-amber-800' },
+                    { level: 4, code: 'B2', title: 'فوق المتوسط', range: 'الكلمات 2,301 - 3,400', count: 1100, coverage: '96%', desc: 'مصطلحات التقنية، الأعمال، التحليل وصياغة الخطابات المركبة.', badgeColor: 'bg-orange-100 text-orange-800' },
+                    { level: 5, code: 'C1/C2', title: 'إتقان واحتراف', range: 'الكلمات 3,401 - 5,000', count: 1600, coverage: '99%+', desc: 'المصطلحات التخصصية، البلاغة اللغوية، وعامية الشارع المتقدمة.', badgeColor: 'bg-purple-100 text-purple-800' },
                 ],
 
                 // Comprehensive Verbs List with Audio & Sentences
@@ -1489,15 +1503,18 @@
                     this.updateTodayCount();
                     this.apiKeyInput = this.userApiKey;
 
-                    // 1. Try local storage cache
+                    // 1. Try local storage cache (مع التحقق من إصدار القاموس)
                     try {
+                        const storedVersion = await localforage.getItem('falaBrasil_dict_version');
                         const storedDict = await localforage.getItem('falaBrasil_dictionary');
-                        if (storedDict && Array.isArray(storedDict) && storedDict.length > 0) {
+                        const isCustom = String(storedVersion || '').startsWith('custom-');
+                        if (storedDict && Array.isArray(storedDict) && storedDict.length > 0 && (storedVersion === DICT_VERSION || isCustom)) {
                             this.fullDictionary = storedDict;
                             this.dictionaryLoaded = true;
                             this.startStage(1);
                             return;
                         }
+                        // نسخة قديمة مخزنة — سيتم جلب النسخة الجديدة أدناه دون فقدان التقدم
                     } catch (e) {
                         console.warn("Storage check:", e);
                     }
@@ -1511,9 +1528,10 @@
                             if (Array.isArray(data) && data.length > 0) {
                                 this.fullDictionary = data;
                                 await localforage.setItem('falaBrasil_dictionary', data);
+                                await localforage.setItem('falaBrasil_dict_version', DICT_VERSION);
                                 this.dictionaryLoaded = true;
                                 this.startStage(1);
-                                this.showToast('تم تحميل 10,000 كلمة بنجاح! 🇧🇷', 'success');
+                                this.showToast('تم تحميل ' + data.length.toLocaleString('en-US') + ' كلمة بنجاح! 🇧🇷', 'success');
                                 return;
                             }
                         }
@@ -1625,8 +1643,20 @@
                 },
 
                 getStageTotalCount(stageCode) {
-                    const count = this.getStageWords(stageCode).length;
-                    return count || (stageCode === 'A1' ? 1000 : (stageCode === 'A2' ? 1500 : 2500));
+                    return this.getStageWords(stageCode).length;
+                },
+
+                // نطاق المرحلة بحسب الأعداد الفعلية للقاموس المحمّل
+                stageRange(stage) {
+                    const codes = ['A1', 'A2', 'B1', 'B2', 'C1/C2'];
+                    const idx = codes.indexOf(stage.code);
+                    if (idx < 0) return stage.range || '';
+                    const total = this.getStageTotalCount(stage.code);
+                    if (!total) return stage.range || '';
+                    let start = 1;
+                    for (let i = 0; i < idx; i++) start += this.getStageTotalCount(codes[i]);
+                    const fmt = (n) => n.toLocaleString('en-US');
+                    return 'الكلمات ' + fmt(start) + ' - ' + fmt(start + total - 1);
                 },
 
                 getStageLearnedCount(stageCode) {
@@ -2051,6 +2081,7 @@
                             if (Array.isArray(data) && data.length > 0) {
                                 this.fullDictionary = data;
                                 await localforage.setItem('falaBrasil_dictionary', data);
+                                await localforage.setItem('falaBrasil_dict_version', 'custom-' + Date.now());
                                 this.dictionaryLoaded = true;
                                 this.startStage(1);
                                 this.isParsing = false;
@@ -2067,13 +2098,34 @@
                                 let sheetName = workbook.SheetNames.find(name => name.includes('القاموس')) || workbook.SheetNames[1];
                                 const worksheet = workbook.Sheets[sheetName];
                                 const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                                const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
                                 const parsedDict = [];
 
-                                for (let i = 1; i < json.length; i++) {
-                                    const row = json[i];
-                                    if (row && row.length >= 5 && row[0]) {
+                                for (const row of json) {
+                                    if (!row || row.length < 5) continue;
+                                    const idNum = Number(row[0]);
+                                    // صفوف البيانات فقط: العمود الأول يشبه الرقم (يستثني صف العناوين '#')
+                                    if (!Number.isFinite(idNum)) continue;
+
+                                    const levelCell = String(row[1] || '').trim().toUpperCase();
+                                    if (LEVELS.includes(levelCell)) {
+                                        // النسخة الجديدة (5,000): [#, المستوى, الكلمة, المعنى, مثال, ترجمة المثال, نوع الكلمة, الأساس, الصيغة]
                                         parsedDict.push({
-                                            id: row[0],
+                                            id: idNum,
+                                            level: levelCell,
+                                            word: row[2] || '',
+                                            translation: row[3] || '',
+                                            example: row[4] || '',
+                                            exampleTr: row[5] || '',
+                                            pos: row[6] || '',
+                                            base: row[7] || '',
+                                            form: row[8] || '',
+                                            phonetic: ''
+                                        });
+                                    } else {
+                                        // النسخة القديمة: [#, الكلمة, النطق, النوع, الترجمة, المستوى, ...]
+                                        parsedDict.push({
+                                            id: idNum,
                                             word: row[1] || '',
                                             phonetic: row[2] || '',
                                             pos: row[3] || '',
@@ -2088,9 +2140,10 @@
                                 if (parsedDict.length > 100) {
                                     this.fullDictionary = parsedDict;
                                     await localforage.setItem('falaBrasil_dictionary', parsedDict);
+                                    await localforage.setItem('falaBrasil_dict_version', 'custom-' + Date.now());
                                     this.dictionaryLoaded = true;
                                     this.startStage(1);
-                                    this.showToast('تم تحميل ' + parsedDict.length + ' كلمة بنجاح!', 'success');
+                                    this.showToast('تم تحميل ' + parsedDict.length.toLocaleString('en-US') + ' كلمة بنجاح!', 'success');
                                 } else {
                                     alert("لم يتم العثور على الكلمات. تأكد من رفع الملف الصحيح.");
                                 }

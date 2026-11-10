@@ -1,5 +1,5 @@
 // FalaBrasil Service Worker for Offline PWA
-const CACHE_NAME = 'falabrasil-v1';
+const CACHE_NAME = 'falabrasil-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
